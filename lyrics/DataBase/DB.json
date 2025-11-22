@@ -1,0 +1,13 @@
+{
+  "meta": {
+    "lyrics_base_url": "https://example.com/lyrics",
+    "notes": "각 track의 lyrics_path는 '/slug' 형태만 쓰며, 최종 URL은 lyrics_base_url + lyrics_path 로 조합함."
+  },
+  "tracks": [
+    {
+      "artist": "음율",
+      "title": "파도혁명",
+      "lyrics_path": "/waverevolution"
+    }
+  ]
+}
