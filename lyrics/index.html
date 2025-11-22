@@ -21,7 +21,7 @@
             font-display: swap;
         }
 
-        /* LiveArea용 POP 폰트 (방법 1) */
+        /* LiveArea용 POP 폰트 (방법 1, 방법 3) */
         @font-face {
             font-family: 'OneStoreMobilePop';
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/ONE-Mobile-POP.woff') format('woff');
@@ -66,6 +66,7 @@
             justify-content: center;
             text-align: center;
             gap: 4px;
+            overflow: hidden;
         }
 
         #LiveArea .live-line {
@@ -81,22 +82,40 @@
         }
 
         /* === 방법 1: POP 2줄 모드 (기본) === */
-        #LiveArea.mode-dual .live-line {
+        #LiveArea.mode-dual .live-line,
+        #LiveArea.mode-soft .live-line { /* 방법3도 같은 스타일 사용 */
             font-family: 'OneStoreMobilePop', 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
             font-size: 20px;
             font-weight: normal;
             color: #ffffff;
 
-            /* 더 얇은 파란 테두리 */
+            /* 얇은 청량 파란 테두리 */
             -webkit-text-stroke: 1px #60B5FF;
             text-stroke: 1px #60B5FF;
-
             text-shadow:
                 -0.5px -0.5px 0 #0065F8,
                  0.5px -0.5px 0 #0065F8,
                 -0.5px  0.5px 0 #0065F8,
                  0.5px  0.5px 0 #0065F8,
                  0px    0px   1px #60B5FF;
+        }
+
+        /* 방법3: 부드러운 2줄 모드일 때 추가 전환 설정 */
+        #LiveArea.mode-soft .live-line {
+            transition: transform 0.25s ease, opacity 0.25s ease;
+        }
+
+        /* 애니메이션용 클래스 */
+        #LiveArea.mode-soft .soft-exit {
+            opacity: 0;
+            transform: translateY(-14px);
+        }
+        #LiveArea.mode-soft .soft-promote {
+            transform: translateY(-18px);
+        }
+        #LiveArea.mode-soft .soft-appear {
+            opacity: 0;
+            transform: translateY(12px);
         }
 
         /* === 방법 2: 방송형 1줄 모드 (LineSeed 700) === */
@@ -301,6 +320,10 @@
                 <input type="radio" name="viewMode" value="single">
                 방송형 1줄 (방법 2)
             </label>
+            <label>
+                <input type="radio" name="viewMode" value="soft">
+                부드러운 2줄 (방법 3)
+            </label>
         </div>
 
         <div id="search-area">
@@ -328,9 +351,10 @@
     let lastTime      = 0;
     let isPlaying     = false;
     let clearTimerId  = null;     // 곡 끝난 뒤 LiveArea 비우기
-    let viewMode      = 'dual';   // 'dual' | 'single'
+    let viewMode      = 'dual';   // 'dual' | 'single' | 'soft'
     let playhead      = 0;        // 일시정지/재개용 진행 시간
     let countdownId   = null;     // 3-2-1 카운트다운용
+    let softAnimId    = null;     // 부드러운 2줄 애니메이션용
 
     // DOM
     const LiveAreaEl     = document.getElementById('LiveArea');
@@ -350,8 +374,9 @@
 
     /* ===== LiveArea 모드 토글 ===== */
     function updateLiveAreaMode() {
-        LiveAreaEl.classList.toggle('mode-dual', viewMode === 'dual');
-        LiveAreaEl.classList.toggle('mode-single', viewMode === 'single');
+        LiveAreaEl.classList.toggle('mode-dual',  viewMode === 'dual');
+        LiveAreaEl.classList.toggle('mode-single',viewMode === 'single');
+        LiveAreaEl.classList.toggle('mode-soft',  viewMode === 'soft');
     }
 
     document.querySelectorAll('input[name="viewMode"]').forEach(radio => {
@@ -436,7 +461,7 @@
 
         lyricsDetailEl.innerHTML = content;
 
-        // 2번 + 3번: 가사 재생 버튼 → 스크롤 후 3초 카운트다운 → 자동 재생
+        // 가사 재생 버튼: 스크롤 + 3초 카운트다운 후 재생
         document.getElementById('btn-play-from-detail')
             .addEventListener('click', () => {
                 preparePlaybackFromSong(song, true);
@@ -444,7 +469,7 @@
 
         document.getElementById('btn-scroll-top')
             .addEventListener('click', () => {
-                LiveAreaShell.scrollIntoView({ top: 0, behavior: 'smooth', block: 'start' });
+                LiveAreaShell.scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
     }
 
@@ -478,11 +503,12 @@
         return result;
     }
 
-    // LiveArea: 현재 줄 + 다음 줄
-    function showLiveLines(activeIndex) {
+    // LiveArea: current / next 표시
+    function showLiveLinesStandard(activeIndex) {
         if (!syncedLines.length) {
             liveCurrentEl.textContent = "재생할 가사가 없습니다.";
             liveNextEl.textContent = "";
+            currentIndex = -1;
             return;
         }
 
@@ -502,9 +528,82 @@
         liveNextEl.textContent = nextText || "";
     }
 
+    function showLiveLinesSoft(activeIndex) {
+        if (!syncedLines.length) {
+            liveCurrentEl.textContent = "재생할 가사가 없습니다.";
+            liveNextEl.textContent = "";
+            currentIndex = -1;
+            return;
+        }
+
+        if (activeIndex < 0) activeIndex = 0;
+        if (activeIndex >= syncedLines.length) {
+            activeIndex = syncedLines.length - 1;
+        }
+
+        // 첫 초기 세팅은 그냥 표시
+        if (currentIndex === -1) {
+            currentIndex = activeIndex;
+            const currText0 = syncedLines[activeIndex].text;
+            const nextText0 = activeIndex + 1 < syncedLines.length
+                ? syncedLines[activeIndex + 1].text
+                : "";
+            liveCurrentEl.textContent = currText0;
+            liveNextEl.textContent = nextText0 || "";
+            return;
+        }
+
+        if (activeIndex === currentIndex) return; // 같은 줄이면 애니메이션 X
+
+        const newCurrText = syncedLines[activeIndex].text;
+        const newNextText = activeIndex + 1 < syncedLines.length
+            ? syncedLines[activeIndex + 1].text
+            : "";
+
+        // 기존 애니메이션 중이면 정리
+        if (softAnimId) {
+            clearTimeout(softAnimId);
+            softAnimId = null;
+            liveCurrentEl.classList.remove('soft-exit');
+            liveNextEl.classList.remove('soft-promote', 'soft-appear');
+        }
+
+        // 현재 줄 위로 사라지고, 다음 줄이 위로 올라가도록
+        liveCurrentEl.classList.add('soft-exit');
+        liveNextEl.classList.add('soft-promote');
+
+        softAnimId = setTimeout(() => {
+            liveCurrentEl.classList.remove('soft-exit');
+            liveNextEl.classList.remove('soft-promote');
+
+            // 텍스트 갱신
+            liveCurrentEl.textContent = newCurrText;
+            liveNextEl.textContent = newNextText || "";
+
+            // 새로 생기는 "다음 줄" 아래에서 부드럽게 올라오기
+            liveNextEl.classList.add('soft-appear');
+            requestAnimationFrame(() => {
+                liveNextEl.classList.remove('soft-appear');
+            });
+
+            softAnimId = null;
+        }, 260); // CSS transition 시간과 맞추기
+
+        currentIndex = activeIndex;
+    }
+
+    function showLiveLines(activeIndex) {
+        if (viewMode === 'soft') {
+            showLiveLinesSoft(activeIndex);
+        } else {
+            showLiveLinesStandard(activeIndex);
+        }
+    }
+
     function clearLiveArea() {
         liveCurrentEl.textContent = "";
         liveNextEl.textContent = "";
+        currentIndex = -1;
     }
 
     function clearCountdown() {
@@ -531,6 +630,10 @@
         if (clearTimerId) {
             clearTimeout(clearTimerId);
             clearTimerId = null;
+        }
+        if (softAnimId) {
+            clearTimeout(softAnimId);
+            softAnimId = null;
         }
         clearCountdown();
 
@@ -585,10 +688,9 @@
             : '싱크 없는 가사를 일정 속도로 흘려보내는 모드입니다. "재생" 버튼을 눌러주세요.';
 
         if (autoStart) {
-            // 2번: LiveArea로 스크롤
+            // LiveArea로 스크롤
             LiveAreaShell.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-            // 3번: 스크롤 후 3초 카운트다운 → 자동 재생
+            // 3초 카운트다운 후 재생
             startCountdownAndPlay();
         }
     }
@@ -613,7 +715,6 @@
                 clearCountdown();
                 clearInterval(countdownId);
                 countdownId = null;
-                // 실제 재생 시작
                 startPlayback();
             }
         }, 1000);
@@ -632,6 +733,10 @@
         if (clearTimerId) {
             clearTimeout(clearTimerId);
             clearTimerId = null;
+        }
+        if (softAnimId) {
+            clearTimeout(softAnimId);
+            softAnimId = null;
         }
         clearCountdown();
 
@@ -694,6 +799,10 @@
             clearTimeout(clearTimerId);
             clearTimerId = null;
         }
+        if (softAnimId) {
+            clearTimeout(softAnimId);
+            softAnimId = null;
+        }
         clearCountdown();
 
         isPlaying = false;
@@ -722,7 +831,7 @@
         if (e.key === 'Enter') searchLyrics();
     });
 
-    btnStart.addEventListener('click', startPlayback);   // 상단 재생버튼은 즉시 재생
+    btnStart.addEventListener('click', startPlayback);   // 상단 재생 버튼은 즉시 재생
     btnStop.addEventListener('click', stopPlayback);
     btnReset.addEventListener('click', resetPlayback);
 </script>
