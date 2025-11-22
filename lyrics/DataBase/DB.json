@@ -5,8 +5,13 @@
   },
   "tracks": [
     {
+      "artist": "정재욱",
+      "title": "Season In The Sun",
+      "lyrics_path": "/else/SeasonInTheSun.json"
+    },
+    {
       "artist": "Hebi (헤비)",
-      "title": "sketch",
+      "title": "Sketch",
       "lyrics_path": "/Hebi/sketch.json"
     },
     {
