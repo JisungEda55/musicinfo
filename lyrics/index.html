@@ -3,8 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lyrics for Streaming</title>
+    <title>Lyrics LiveArea Player</title>
+
+    <!-- 파비콘 -->
     <link rel="icon" type="image/png" href="https://i.ibb.co/SDpQchby/IMG-4921.png">
+
     <style>
         /* LineSeed Regular 400 : 기본 영역 */
         @font-face {
@@ -350,7 +353,7 @@
         </div>
 
         <div id="search-area">
-            <input type="text" id="searchInput" placeholder="노래 제목 또는 가수 입력 (예: Butter, IU)">
+            <input type="text" id="searchInput" placeholder="노래 제목 또는 가수 입력 (예: Butter, IU, 파도혁명)">
             <button id="searchBtn">검색</button>
         </div>
 
@@ -365,6 +368,9 @@
 <script>
     const API_URL = "https://lrclib.net/api/search";
 
+    // ✅ 네 GitHub JSON DB
+    const LOCAL_DB_INDEX_URL = "https://raw.githubusercontent.com/JisungEda55/musicinfo/refs/heads/main/lyrics/DataBase/DB.json";
+
     // 상태
     let currentSong   = null;
     let syncedLines   = [];   // [{ time, text }]
@@ -378,6 +384,7 @@
     let playhead      = 0;        // 일시정지/재개용 진행 시간
     let countdownId   = null;     // 3-2-1 카운트다운용
     let softAnimId    = null;     // 부드러운 2줄 애니메이션용
+    let localDBCache  = null;     // DB.json 캐시
 
     // DOM
     const LiveAreaEl     = document.getElementById('LiveArea');
@@ -395,6 +402,15 @@
     const resultList     = document.getElementById('result-list');
     const lyricsDetailEl = document.getElementById('lyrics-detail');
 
+    /* ===== 공통 유틸 ===== */
+    function normalizeKey(str) {
+        return (str || "")
+            .toString()
+            .toLowerCase()
+            .replace(/\s+/g, '')
+            .trim();
+    }
+
     /* ===== LiveArea 모드 토글 ===== */
     function updateLiveAreaMode() {
         LiveAreaEl.classList.toggle('mode-dual',  viewMode === 'dual');
@@ -411,7 +427,105 @@
     updateLiveAreaMode();
 
     /* =========================
-       1. 검색
+       0. 로컬 DB 관련 함수
+       ========================= */
+
+    async function loadLocalDB() {
+        if (localDBCache) return localDBCache;
+
+        try {
+            const res = await fetch(LOCAL_DB_INDEX_URL);
+            if (!res.ok) throw new Error('Failed to load local DB index');
+            const data = await res.json();
+            localDBCache = data;
+            return data;
+        } catch (e) {
+            console.error('Local DB load error:', e);
+            return { meta: {}, tracks: [] };
+        }
+    }
+
+    // DB.json에서 곡 검색 (검색어로)
+    async function searchLocalDBTracks(query) {
+        const db = await loadLocalDB();
+        const baseTracks = db.tracks || [];
+        const q = normalizeKey(query);
+
+        if (!q) return [];
+
+        const matched = baseTracks.filter(t => {
+            const nt = normalizeKey(t.title);
+            const na = normalizeKey(t.artist);
+            return nt.includes(q) || na.includes(q);
+        });
+
+        // lrclib 결과와 비슷한 형태로 만들어줌
+        return matched.map(t => ({
+            trackName: t.title,
+            artistName: t.artist,
+            albumName: 'Local DB',
+            _lyricsFromLocalDBOnly: true   // 표시용 플래그
+        }));
+    }
+
+    // 제목/아티스트로 로컬 DB에서 가사 가져오기
+    async function fetchLyricsFromLocalDB(trackName, artistName) {
+        const db = await loadLocalDB();
+        const tracks = db.tracks || [];
+        const baseUrl = (db.meta && db.meta.lyrics_base_url) 
+            ? db.meta.lyrics_base_url.replace(/\/$/, '')
+            : '';
+
+        const tNorm = normalizeKey(trackName);
+        const aNorm = normalizeKey(artistName);
+
+        // 1차: 제목 + 아티스트 둘 다 정확 매칭
+        let matched = tracks.find(t => 
+            normalizeKey(t.title) === tNorm &&
+            normalizeKey(t.artist) === aNorm
+        );
+
+        // 2차: 제목만 정확 매칭
+        if (!matched) {
+            matched = tracks.find(t => normalizeKey(t.title) === tNorm);
+        }
+
+        if (!matched) return null;
+
+        const lyricsPath = matched.lyrics_path || '';
+        const lyricsUrl  = baseUrl + lyricsPath;
+
+        try {
+            const res = await fetch(lyricsUrl);
+            if (!res.ok) throw new Error('lyrics json load failed');
+            const json = await res.json();
+
+            if (!Array.isArray(json.lyrics)) return null;
+
+            // JSON → LRC 형태 문자열로 변환
+            const lrc = json.lyrics
+                .map(item => {
+                    const time = (item.time || "00:00").padEnd(5, '0'); // "00:05" 등
+                    const line = item.line || "";
+                    return `[${time}.00]${line}`;
+                })
+                .join('\n');
+
+            return {
+                trackName: json.title || matched.title || trackName,
+                artistName: json.artist || matched.artist || artistName,
+                syncedLyrics: lrc,
+                plainLyrics: null,
+                _source: 'local-db'
+            };
+        } catch (e) {
+            console.error('Local lyrics load error:', e);
+            return null;
+        }
+    }
+
+    /* =========================
+       1. 검색 (lrclib → 없으면 로컬 DB 검색)
        ========================= */
     async function searchLyrics() {
         const query = searchInput.value.trim();
@@ -423,42 +537,86 @@
         resultList.innerHTML = "<li class='empty-msg' style='padding:4px 0;'>검색 중...</li>";
         lyricsDetailEl.innerHTML = "<p class='empty-msg'>검색 결과에서 곡을 선택하면 가사가 표시됩니다.</p>";
 
+        let hasAPIResult = false;
+
         try {
             const res  = await fetch(`${API_URL}?q=${encodeURIComponent(query)}`);
             const data = await res.json();
 
             resultList.innerHTML = "";
 
-            if (!Array.isArray(data) || data.length === 0) {
-                resultList.innerHTML = "<li class='empty-msg' style='padding:4px 0;'>검색 결과가 없습니다.</li>";
+            if (Array.isArray(data) && data.length > 0) {
+                hasAPIResult = true;
+                data.slice(0, 10).forEach(song => {
+                    const li = document.createElement('li');
+                    li.className = 'song-item';
+
+                    const hasLyrics = song.syncedLyrics || song.plainLyrics;
+                    const badge = hasLyrics ? 'API' : 'API(가사 없음)';
+
+                    li.innerHTML = `
+                        <div class="song-title">♪ ${song.trackName}</div>
+                        <div class="song-artist">${song.artistName} (${song.albumName || '앨범 정보 없음'}) · <span style="color:#60B5FF;font-size:11px;">${badge}</span></div>
+                    `;
+                    li.addEventListener('click', () => showLyricsDetail(song));
+                    resultList.appendChild(li);
+                });
+            }
+        } catch (e) {
+            console.error('lrclib search error:', e);
+            resultList.innerHTML = "";
+        }
+
+        // lrclib에서 아무것도 못 찾았으면 → 로컬 DB 검색
+        if (!hasAPIResult) {
+            const localResults = await searchLocalDBTracks(query);
+
+            resultList.innerHTML = "";
+
+            if (!localResults.length) {
+                resultList.innerHTML = "<li class='empty-msg' style='padding:4px 0;'>검색 결과가 없습니다. (API & 로컬 DB)</li>";
                 return;
             }
 
-            data.slice(0, 10).forEach(song => {
+            localResults.forEach(song => {
                 const li = document.createElement('li');
                 li.className = 'song-item';
                 li.innerHTML = `
                     <div class="song-title">♪ ${song.trackName}</div>
-                    <div class="song-artist">${song.artistName} (${song.albumName || '앨범 정보 없음'})</div>
+                    <div class="song-artist">${song.artistName} (Local DB)</div>
                 `;
                 li.addEventListener('click', () => showLyricsDetail(song));
                 resultList.appendChild(li);
             });
-
-        } catch (e) {
-            console.error(e);
-            resultList.innerHTML = "<li class='empty-msg' style='padding:4px 0; color:#f66;'>에러가 발생했습니다.</li>";
         }
     }
 
     /* =========================
-       2. 하단: 가사 상세 보기
+       2. 하단: 가사 상세 보기 (API → 없으면 로컬 DB)
        ========================= */
-    function showLyricsDetail(song) {
+    async function showLyricsDetail(song) {
         currentSong = song;
 
-        let content = `<h3>${song.trackName} - ${song.artistName}</h3>`;
-        content += `<div class="small-text">${song.albumName || ''}</div>`;
+        const titleForSearch  = song.trackName || song.title || "";
+        const artistForSearch = song.artistName || song.artist || "";
+
+        let usedLocal = false;
+
+        // API 결과에 가사가 없으면 → 로컬 DB 시도
+        if (!song.syncedLyrics && !song.plainLyrics) {
+            const local = await fetchLyricsFromLocalDB(titleForSearch, artistForSearch);
+            if (local) {
+                song.trackName    = local.trackName;
+                song.artistName   = local.artistName;
+                song.syncedLyrics = local.syncedLyrics;
+                song.plainLyrics  = local.plainLyrics;
+                song._source      = 'local-db';
+                usedLocal         = true;
+            }
+        }
+
+        let content = `<h3>${song.trackName || titleForSearch} - ${song.artistName || artistForSearch}</h3>`;
+        content += `<div class="small-text">${song.albumName || (song._source === 'local-db' ? 'Local DB' : '')}</div>`;
         content += `<hr>`;
 
         if (song.syncedLyrics) {
@@ -467,12 +625,12 @@
                 '<span class="time-tag">[$1]</span>'
             );
             content += highlighted;
-            content += `<p class="small-text">이 곡은 싱크(LRC) 가사가 있습니다. "가사 재생" 기능을 사용할 수 있어요.</p>`;
+            content += `<p class="small-text">${usedLocal ? '로컬 DB에서 싱크 가사를 불러왔습니다.' : '이 곡은 싱크(LRC) 가사가 있습니다. "가사 재생" 기능을 사용할 수 있어요.'}</p>`;
         } else if (song.plainLyrics) {
             content += song.plainLyrics;
-            content += `<p class="small-text">싱크 정보가 없어, 일정 속도로 한 줄씩 흘려보내는 방식으로 재생됩니다.</p>`;
+            content += `<p class="small-text">${usedLocal ? '로컬 DB에서 일반 가사를 불러왔습니다.' : '싱크 정보가 없어, 일정 속도로 한 줄씩 흘려보내는 방식으로 재생됩니다.'}</p>`;
         } else {
-            content += "가사 정보가 등록되지 않은 곡입니다.";
+            content += "가사 정보가 등록되지 않은 곡입니다. (API & 로컬 DB 모두 없음)";
         }
 
         content += `
@@ -484,10 +642,9 @@
 
         lyricsDetailEl.innerHTML = content;
 
-        // 가사 재생 버튼: 스크롤 + 3초 카운트다운 후 재생
         document.getElementById('btn-play-from-detail')
             .addEventListener('click', () => {
-                preparePlaybackFromSong(song, true);
+                preparePlaybackFromSong(song, true); // 스크롤 + 카운트다운 + 재생
             });
 
         document.getElementById('btn-scroll-top')
@@ -661,8 +818,8 @@
         }
         clearCountdown();
 
-        const title  = song.trackName || '제목 없음';
-        const artist = song.artistName || '아티스트 정보 없음';
+        const title  = song.trackName || song.title || '제목 없음';
+        const artist = song.artistName || song.artist || '아티스트 정보 없음';
         nowPlayingEl.textContent = `${title} - ${artist}`;
 
         let hasSynced = false;
