@@ -5,7 +5,7 @@
     <title>가사 JSON 생성기 (Lyrics JSON Builder)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <!-- 파비콘 (원하면 수정 가능) -->
+    <!-- 파비콘 -->
     <link rel="icon" type="image/png" href="https://i.ibb.co/SDpQchby/IMG-4921.png">
 
     <!-- Tesseract.js (OCR용) -->
@@ -201,7 +201,6 @@
         }
 
         .section-gap { margin-top: 8px; }
-
         .hidden { display: none !important; }
 
         .badge {
@@ -250,6 +249,11 @@
             border: 1px solid #252839;
         }
 
+        /* 싱크 중 현재 줄 강조 */
+        tr.sync-current td {
+            background: #243048 !important;
+        }
+
         pre.json-output {
             background: #0b0d12;
             border-radius: 8px;
@@ -265,7 +269,7 @@
 <div class="app">
     <header>
         <h1>가사 JSON 생성기</h1>
-        <span class="sub">· lrclib 없을 때 쓸 자체 JSON 가사 생성 도구</span>
+        <span class="sub">· 텍스트 → JSON + 수동 싱크 타이밍 찍기</span>
     </header>
 
     <div class="layout">
@@ -278,11 +282,11 @@
             <div class="row">
                 <div>
                     <label for="titleInput">제목 (title)</label>
-                    <input type="text" id="titleInput" placeholder="예: 파도혁명">
+                    <input type="text" id="titleInput" placeholder="예: Chewing Luv">
                 </div>
                 <div>
                     <label for="artistInput">가수/아티스트 (artist)</label>
-                    <input type="text" id="artistInput" placeholder="예: 음율">
+                    <input type="text" id="artistInput" placeholder="예: 아이츄츄 언니">
                 </div>
             </div>
             <div class="section-gap">
@@ -307,10 +311,10 @@
             <!-- 직접 입력 -->
             <div id="manualPane" class="section-gap">
                 <label for="manualLyrics">가사 텍스트 (한 줄당 한 줄씩)</label>
-                <textarea id="manualLyrics" placeholder="예시&#10;처음은 미약한 물결이겠지만&#10;그렇게 너의 꿈에 닿을 수 있겠지&#10;..."></textarea>
+                <textarea id="manualLyrics" placeholder="가사를 줄 단위로 그대로 붙여넣어 주세요."></textarea>
                 <div class="small">
                     * 각 줄이 JSON의 <code>lyrics[].line</code> 하나가 됩니다.<br>
-                    * 텍스트에서 라인 생성 시 한글 글자 사이에 이상하게 들어간 공백은 자동으로 제거해줘요.
+                    * 공백/문장부호는 입력한 그대로 사용합니다.
                 </div>
             </div>
 
@@ -328,7 +332,7 @@
                     <textarea id="ocrResult" placeholder="OCR로 인식된 가사가 여기에 들어옵니다. 필요하면 직접 고쳐주세요."></textarea>
                     <div class="small">
                         * 이 텍스트를 기반으로 JSON을 만듭니다.<br>
-                        * 텍스트에서 라인 생성 시 한글 글자 사이에 이상하게 들어간 공백은 자동으로 제거됩니다.
+                        * 공백/줄바꿈도 그대로 사용하니 필요하면 직접 다듬어 주세요.
                     </div>
                 </div>
             </div>
@@ -336,7 +340,7 @@
             <hr style="border:none;border-top:1px solid #262a3a;margin:10px 0;">
 
             <div class="card-title">
-                시간 생성 옵션
+                시간 생성 옵션 (기본 자동 간격)
                 <span class="tag">STEP 3</span>
             </div>
 
@@ -364,7 +368,7 @@
         <!-- 오른쪽: 라인 편집 & JSON -->
         <div class="card">
             <div class="card-title">
-                라인 편집 & JSON 출력
+                라인 편집
                 <span class="tag">STEP 4</span>
             </div>
 
@@ -388,6 +392,37 @@
                 <div class="btn-group" style="margin-top:6px;">
                     <button class="btn secondary" id="addLineBtn">줄 추가</button>
                     <button class="btn secondary" id="clearLinesBtn">모든 줄 삭제</button>
+                </div>
+            </div>
+
+            <hr style="border:none;border-top:1px solid #262a3a;margin:10px 10px;">
+
+            <div class="card-title">
+                수동 싱크 도구
+                <span class="badge">타이밍 찍기</span>
+            </div>
+
+            <div class="section-gap">
+                <div class="row">
+                    <div>
+                        <label for="totalDurationInput">곡 전체 시간</label>
+                        <input type="text" id="totalDurationInput" placeholder="예: 3:45 또는 225">
+                        <div class="small">mm:ss 또는 전체 초로 입력</div>
+                    </div>
+                    <div>
+                        <label>현재 재생 시간</label>
+                        <div id="syncTimeDisplay" class="small" style="margin-top:4px;">00:00.0</div>
+                        <div id="syncStatus" class="small"></div>
+                    </div>
+                </div>
+
+                <div class="section-gap btn-group">
+                    <button class="btn" id="syncStartBtn">싱크 재생 시작</button>
+                    <button class="btn secondary" id="syncNextBtn" disabled>Next (다음 줄)</button>
+                </div>
+
+                <div class="small" id="syncLineDisplay">
+                    1) 텍스트에서 라인 생성 → 2) 곡 전체 시간 입력 → 3) 싱크 재생 시작 → 음악 들으면서 Next 눌러 주세요.
                 </div>
             </div>
 
@@ -435,6 +470,13 @@
     const addLineBtn = document.getElementById('addLineBtn');
     const clearLinesBtn = document.getElementById('clearLinesBtn');
 
+    const totalDurationInput = document.getElementById('totalDurationInput');
+    const syncTimeDisplay = document.getElementById('syncTimeDisplay');
+    const syncStatus = document.getElementById('syncStatus');
+    const syncLineDisplay = document.getElementById('syncLineDisplay');
+    const syncStartBtn = document.getElementById('syncStartBtn');
+    const syncNextBtn = document.getElementById('syncNextBtn');
+
     const jsonOutput = document.getElementById('jsonOutput');
     const copyJsonBtn = document.getElementById('copyJsonBtn');
     const downloadJsonBtn = document.getElementById('downloadJsonBtn');
@@ -442,6 +484,14 @@
 
     // === 상태 ===
     let lyricsLines = []; // [{ time: "00:00", line: "..." }]
+
+    // 싱크 관련 상태
+    let syncModeActive = false;
+    let syncStartTime = 0;
+    let syncTimerId = null;
+    let syncCountdownId = null;
+    let syncCurrentIndex = 0;
+    let syncTotalDuration = null; // 초 단위
 
     // === 탭 전환 ===
     function activateTab(tabName) {
@@ -464,7 +514,7 @@
     // === OCR 실행 ===
     ocrRunBtn.addEventListener('click', async () => {
         const file = ocrFile.files && ocrFile.files[0];
-               if (!file) {
+        if (!file) {
             alert('이미지 파일을 선택해주세요.');
             return;
         }
@@ -475,7 +525,7 @@
         try {
             const { data } = await Tesseract.recognize(
                 file,
-                'kor+eng',               // 한국어 + 영어
+                'kor+eng',
                 { logger: m => console.log(m) }
             );
             ocrResult.value = (data && data.text) ? data.text.trim() : '';
@@ -500,24 +550,52 @@
         return `${pad2(m)}:${pad2(r)}`;
     }
 
-    // === 한글 사이 공백 제거 유틸 ===
-    // "처 음 은" -> "처음은" 같이 한글-공백-한글 패턴만 붙여줌
-    function cleanKoreanSpaces(text) {
-        if (!text) return text;
-        return text.replace(/([\uAC00-\uD7A3])\s+([\uAC00-\uD7A3])/g, '$1$2');
+    function secToMMSSms(sec) {
+        const s = Math.max(0, sec);
+        const m = Math.floor(s / 60);
+        const r = s % 60;
+        const whole = Math.floor(r);
+        const ms = Math.floor((r - whole) * 10); // 0.1초 단위
+        return `${pad2(m)}:${pad2(whole)}.${ms}`;
     }
 
-    // === 텍스트 → 라인 배열 만들기 ===
+    // 문자열 "3:45" 또는 "225" → 초
+    function parseDurationToSec(str) {
+        if (!str) return null;
+        const s = str.trim();
+        if (!s) return null;
+
+        if (s.includes(':')) {
+            const parts = s.split(':').map(p => p.trim());
+            if (parts.length === 2) {
+                const mm = Number(parts[0]);
+                const ss = Number(parts[1]);
+                if (isNaN(mm) || isNaN(ss)) return null;
+                return mm * 60 + ss;
+            } else if (parts.length === 3) {
+                const hh = Number(parts[0]);
+                const mm = Number(parts[1]);
+                const ss = Number(parts[2]);
+                if (isNaN(hh) || isNaN(mm) || isNaN(ss)) return null;
+                return hh * 3600 + mm * 60 + ss;
+            }
+            return null;
+        } else {
+            const num = Number(s);
+            if (isNaN(num)) return null;
+            return num;
+        }
+    }
+
+    // === 텍스트 → 라인 배열 만들기 (공백 그대로 사용) ===
     function buildLinesFromText(rawText) {
         const startSec = parseInt(startTimeSecInput.value, 10) || 0;
         const intervalSec = parseInt(intervalSecInput.value, 10) || 5;
 
-        // 1) 전체 텍스트에서 한글 사이 공백 먼저 정리
-        const cleanedText = cleanKoreanSpaces(rawText);
-
-        const lines = cleanedText
+        const lines = rawText
             .split(/\r?\n/)
-            .map(l => l.trim())
+            .map(l => l.replace(/\r/g, ''))
+            .map(l => l.trimEnd())
             .filter(l => l.length > 0);
 
         const result = [];
@@ -532,6 +610,31 @@
             currentTime += intervalSec;
         }
         return result;
+    }
+
+    // === 싱크 상태 리셋 ===
+    function resetSyncState() {
+        syncModeActive = false;
+        syncStartTime = 0;
+        syncCurrentIndex = 0;
+        if (syncTimerId) {
+            cancelAnimationFrame(syncTimerId);
+            syncTimerId = null;
+        }
+        if (syncCountdownId) {
+            clearInterval(syncCountdownId);
+            syncCountdownId = null;
+        }
+        syncStartBtn.textContent = '싱크 재생 시작';
+        syncStartBtn.disabled = false;
+        syncNextBtn.disabled = true;
+        syncTimeDisplay.textContent = '00:00.0';
+        syncStatus.textContent = '';
+        syncLineDisplay.textContent =
+            lyricsLines.length
+                ? `현재 준비된 라인 수: ${lyricsLines.length}개. 싱크를 시작하면 1번 줄부터 타이밍을 찍습니다.`
+                : '1) 텍스트에서 라인 생성 → 2) 곡 전체 시간 입력 → 3) 싱크 재생 시작 → 음악 들으면서 Next 눌러 주세요.';
+        renderLyricsTable(); // 강조 제거
     }
 
     // === 테이블 렌더 ===
@@ -553,6 +656,10 @@
 
         lyricsLines.forEach((row, idx) => {
             const tr = document.createElement('tr');
+
+            if (syncModeActive && idx === syncCurrentIndex) {
+                tr.classList.add('sync-current');
+            }
 
             // 번호
             const tdIdx = document.createElement('td');
@@ -592,7 +699,11 @@
             delBtn.style.fontSize = '11px';
             delBtn.addEventListener('click', () => {
                 lyricsLines.splice(idx, 1);
+                if (syncCurrentIndex >= lyricsLines.length) {
+                    syncCurrentIndex = Math.max(0, lyricsLines.length - 1);
+                }
                 renderLyricsTable();
+                updateJsonOutput();
             });
             tdDel.appendChild(delBtn);
 
@@ -631,7 +742,6 @@
 
     // === 텍스트 → 라인 생성 버튼 ===
     buildLinesBtn.addEventListener('click', () => {
-        // 현재 활성 탭의 텍스트 사용
         const useManual = tabManual.classList.contains('active');
         const rawText = useManual ? manualLyrics.value : ocrResult.value;
 
@@ -642,9 +752,10 @@
 
         lyricsLines = buildLinesFromText(rawText);
         renderLyricsTable();
+        resetSyncState();
 
         buildStatus.textContent =
-            `라인 ${lyricsLines.length}개를 생성했습니다. (한글 사이 공백 자동 정리 적용됨) 필요하면 시간과 가사를 직접 수정할 수 있습니다.`;
+            `라인 ${lyricsLines.length}개를 생성했습니다. (자동 간격으로 시간 설정됨) 필요하면 직접 수정하거나 수동 싱크로 덮어쓸 수 있습니다.`;
     });
 
     // === 줄 추가/삭제 ===
@@ -654,6 +765,7 @@
             line: ''
         });
         renderLyricsTable();
+        resetSyncState();
     });
 
     clearLinesBtn.addEventListener('click', () => {
@@ -661,6 +773,131 @@
         if (!confirm('모든 라인을 삭제할까요?')) return;
         lyricsLines = [];
         renderLyricsTable();
+        resetSyncState();
+    });
+
+    // === 수동 싱크: 타이머 틱 ===
+    function syncTick(now) {
+        if (!syncModeActive) return;
+        const elapsedSec = (now - syncStartTime) / 1000;
+        const clamped = syncTotalDuration != null
+            ? Math.min(elapsedSec, syncTotalDuration)
+            : elapsedSec;
+
+        syncTimeDisplay.textContent = secToMMSSms(clamped);
+
+        if (syncTotalDuration != null && clamped >= syncTotalDuration) {
+            // 전체 시간 도달
+            finishSync('곡 전체 시간을 모두 사용했습니다. 싱크를 종료합니다.');
+            return;
+        }
+
+        syncTimerId = requestAnimationFrame(syncTick);
+    }
+
+    function finishSync(msg) {
+        syncModeActive = false;
+        if (syncTimerId) {
+            cancelAnimationFrame(syncTimerId);
+            syncTimerId = null;
+        }
+        if (syncCountdownId) {
+            clearInterval(syncCountdownId);
+            syncCountdownId = null;
+        }
+        syncStartBtn.textContent = '싱크 재생 시작';
+        syncStartBtn.disabled = false;
+        syncNextBtn.disabled = true;
+        syncStatus.textContent = msg || '싱크가 종료되었습니다.';
+        renderLyricsTable();
+    }
+
+    // === 싱크 시작 버튼 ===
+    syncStartBtn.addEventListener('click', () => {
+        if (!lyricsLines.length) {
+            alert('먼저 텍스트에서 라인 생성이나 수동으로 라인을 추가해주세요.');
+            return;
+        }
+
+        const dur = parseDurationToSec(totalDurationInput.value);
+        if (dur == null || dur <= 0) {
+            alert('곡 전체 시간을 올바르게 입력해주세요. (예: 3:45 또는 225)');
+            return;
+        }
+        syncTotalDuration = dur;
+
+        // 싱크용으로 time을 초기화해도 되고, 기존 값 위에 덮어써도 됨
+        lyricsLines.forEach(l => { l.time = '00:00'; });
+        renderLyricsTable();
+
+        // 기존 싱크 상태 정리 후 새로 시작
+        if (syncTimerId) cancelAnimationFrame(syncTimerId);
+        if (syncCountdownId) clearInterval(syncCountdownId);
+
+        syncModeActive = false;
+        syncCurrentIndex = 0;
+        syncTimeDisplay.textContent = '00:00.0';
+        syncStatus.textContent = '3초 후 싱크가 시작됩니다. 음악 재생을 준비해주세요.';
+        syncLineDisplay.textContent = `현재 타이밍 대상: 1번 줄 / 총 ${lyricsLines.length}줄`;
+        renderLyricsTable();
+
+        syncStartBtn.disabled = true;
+        syncNextBtn.disabled = true;
+
+        // 3초 카운트다운
+        let count = 3;
+        syncStartBtn.textContent = String(count);
+        syncCountdownId = setInterval(() => {
+            count--;
+            if (count > 0) {
+                syncStartBtn.textContent = String(count);
+            } else {
+                clearInterval(syncCountdownId);
+                syncCountdownId = null;
+
+                // 실제 싱크 시작
+                syncModeActive = true;
+                syncStartTime = performance.now();
+                syncStartBtn.textContent = '싱크 진행 중';
+                syncStatus.textContent = '음악에 맞춰 줄이 바뀔 때마다 Next를 눌러주세요.';
+                syncNextBtn.disabled = false;
+
+                renderLyricsTable();
+                syncTimerId = requestAnimationFrame(syncTick);
+            }
+        }, 1000);
+    });
+
+    // === 싱크 Next 버튼 ===
+    syncNextBtn.addEventListener('click', () => {
+        if (!syncModeActive) return;
+        if (syncCurrentIndex >= lyricsLines.length) {
+            finishSync('이미 마지막 줄까지 싱크를 찍었습니다.');
+            return;
+        }
+
+        const now = performance.now();
+        const elapsedSec = (now - syncStartTime) / 1000;
+        const clamped = syncTotalDuration != null
+            ? Math.min(elapsedSec, syncTotalDuration)
+            : elapsedSec;
+
+        // 현재 줄에 시간 찍기
+        lyricsLines[syncCurrentIndex].time = secToMMSS(clamped);
+
+        syncCurrentIndex++;
+
+        if (syncCurrentIndex >= lyricsLines.length) {
+            renderLyricsTable();
+            updateJsonOutput();
+            finishSync('마지막 줄까지 싱크 완료!');
+            return;
+        }
+
+        syncLineDisplay.textContent =
+            `현재 타이밍 대상: ${syncCurrentIndex + 1}번 줄 / 총 ${lyricsLines.length}줄`;
+        renderLyricsTable();
+        updateJsonOutput();
     });
 
     // === JSON 복사 ===
