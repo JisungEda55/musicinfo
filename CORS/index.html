@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Music Info!</title>
-<link rel="icon" type="image/png" href="https://i.ibb.co/0mHF8KT/Music-1.webp">
+    <link rel="icon" type="image/png" href="https://i.ibb.co/0mHF8KT/Music-1.webp">
+
     <style>
         /* LINESeedKR-Bd 폰트 설정 */
         @font-face {
@@ -14,14 +15,18 @@
             font-style: normal;
         }
 
-        /* 전체 스타일 */
         body {
-            font-family: 'LINESeedKR-Bd', sans-serif; margin: 0; padding: 0;
-            background-color: transparent; color: #333;
-            display: flex; flex-direction: column; height: 100vh;
+            font-family: 'LINESeedKR-Bd', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: transparent;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
             overflow: hidden;
         }
-        
+
         /* Vision-Box 스타일 */
         .vision-box {
             flex: 4;
@@ -63,30 +68,49 @@
             flex: 6;
             padding: 20px;
             overflow-y: auto;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none;  /* Internet Explorer 10+ */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
         .content-box::-webkit-scrollbar {
-            display: none;  /* Chrome, Safari, Opera */
+            display: none;
         }
 
         h1 {
-            color: #1d1d1f; font-weight: 700; text-align: center; margin-top: 10px;
+            color: #1d1d1f;
+            font-weight: 700;
+            text-align: center;
+            margin-top: 10px;
         }
-        
+
         /* 검색 창 스타일 */
-        .search-box { text-align: center; margin: 20px auto; }
+        .search-box {
+            text-align: center;
+            margin: 20px auto;
+            max-width: 600px;
+        }
         .search-box input[type="text"] {
-            width: 70%; padding: 15px; font-size: 16px; border: 1px solid #d1d1d6; border-radius: 8px; margin-right: 10px;
+            width: 70%;
+            padding: 15px;
+            font-size: 16px;
+            border: 1px solid #d1d1d6;
+            border-radius: 8px;
+            margin-right: 10px;
             font-family: 'LINESeedKR-Bd', sans-serif;
             transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1);
         }
         .search-box input[type="text"]:focus {
             box-shadow: 0 0 10px rgba(0, 122, 255, 0.5);
+            outline: none;
         }
         .search-box button {
-            padding: 15px 25px; font-size: 16px; border: none; border-radius: 8px;
-            background-color: #007aff; color: white; cursor: pointer; transition: background-color 0.3s, transform 0.3s;
+            padding: 15px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            background-color: #007aff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
             font-family: 'LINESeedKR-Bd', sans-serif;
         }
         .search-box button:hover {
@@ -96,38 +120,60 @@
 
         /* 검색 결과 스타일 */
         .results {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;
-            margin-top: 20px; padding: 0 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+            padding: 0 20px;
         }
         .result-item {
-            display: flex; flex-direction: column;
-            background: white; border-radius: 12px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); padding: 15px;
-            text-align: left; transition: transform 0.3s, box-shadow 0.3s; font-family: 'LINESeedKR-Bd', sans-serif;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            text-align: left;
+            transition: transform 0.3s, box-shadow 0.3s;
+            font-family: 'LINESeedKR-Bd', sans-serif;
         }
         .result-item:hover {
-            transform: scale(1.05);
+            transform: scale(1.03);
             box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
         }
 
-        /* 앨범 커버 스타일 */
         .result-item img {
-            width: 300px; height: 300px;
-            border-radius: 8px; margin-right: 15px; object-fit: cover;
+            width: 300px;
+            height: 300px;
+            border-radius: 8px;
+            margin-right: 15px;
+            object-fit: cover;
         }
 
-        /* 음악 정보 스타일 */
         .result-info {
-            display: flex; flex-direction: column; justify-content: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
         .result-info h3 {
-            font-size: 18px; margin: 0; color: #1d1d1f;
+            font-size: 18px;
+            margin: 0;
+            color: #1d1d1f;
         }
         .result-info p {
-            margin: 5px 0; color: #555;
+            margin: 5px 0;
+            color: #555;
         }
         .result-info button {
-            margin-top: 10px; padding: 10px 20px; font-size: 14px; border: none; border-radius: 8px;
-            background-color: #007aff; color: white; cursor: pointer; transition: background-color 0.3s, transform 0.3s;
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 14px;
+            border: none;
+            border-radius: 8px;
+            background-color: #007aff;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
             font-family: 'LINESeedKR-Bd', sans-serif;
         }
         .result-info button:hover {
@@ -137,30 +183,49 @@
 
         /* 세부 정보 스타일 */
         .detail-view {
-            background: #f9f9f9; border: 1px solid #ddd; border-radius: 10px; margin-top: 10px; padding: 15px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            margin-top: 10px;
+            padding: 15px;
             display: none;
             transition: max-height 0.5s ease-in-out;
         }
         .detail-view img {
-            width: 100%; max-width: 400px; border-radius: 20px;
-            margin-bottom: 10px; object-fit: contain;
+            width: 100%;
+            max-width: 400px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            object-fit: contain;
         }
         .detail-view h3 {
-            font-size: 18px; margin: 10px 0; color: #1d1d1f;
+            font-size: 18px;
+            margin: 10px 0;
+            color: #1d1d1f;
         }
         .detail-view p {
-            font-size: 14px; color: #555; margin: 5px 0;
+            font-size: 14px;
+            color: #555;
+            margin: 5px 0;
         }
-        .detail-view a, .detail-view button {
-            display: inline-block; margin-top: 10px; padding: 8px 16px; font-size: 14px; border-radius: 8px;
-            background-color: #007aff; color: white; text-decoration: none; transition: background-color 0.3s, transform 0.3s;
+        .detail-view a, .detail-view button.detail-button {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 8px 16px;
+            font-size: 14px;
+            border-radius: 8px;
+            background-color: #007aff;
+            color: white;
+            text-decoration: none;
+            transition: background-color 0.3s, transform 0.3s;
             font-family: 'LINESeedKR-Bd', sans-serif;
-            border: none; cursor: pointer;
+            border: none;
+            cursor: pointer;
         }
-        .detail-view button {
+        .detail-view button.detail-button.raise {
             background-color: #ff5e5e;
         }
-        .detail-view a:hover, .detail-view button:hover {
+        .detail-view a:hover, .detail-view button.detail-button:hover {
             background-color: #005bb5;
             transform: translateY(-2px);
         }
@@ -169,6 +234,7 @@
             .search-box input[type="text"] {
                 width: 100%;
                 margin-bottom: 10px;
+                margin-right: 0;
             }
             .search-box button {
                 width: 100%;
@@ -195,17 +261,6 @@
                 font-size: 14px;
             }
         }
-            .search-box button {
-                width: 100%;
-            }
-            .result-item {
-                flex-direction: column;
-                align-items: center;
-            }
-            .result-item img {
-                margin-bottom: 10px;
-            }
-        }
     </style>
 </head>
 <body>
@@ -213,7 +268,7 @@
         <img src="" alt="앨범 커버" id="vision-cover" style="display: none;">
         <div class="vision-info" id="vision-info" style="display: none;">
             <h3 id="vision-title"></h3>
-            <p id="vision-artist">$1</p>
+            <p id="vision-artist"></p>
             <p style="font-size: 14px; color: #ffffffec; margin-top: 4px;">iTunes 제공</p>
         </div>
     </div>
@@ -228,53 +283,102 @@
         <div class="results" id="results"></div>
     </div>
 
-    <script>
-        let searchResults = [];
+    <p style="text-align: center; font-size: 12px; color: #555; margin-top: 10px;">
+        iTunes Search API의 데이터를 이용하여 정보를 제공합니다.
+    </p>
 
+    <script>
+        // JSONP 응답을 위해 전역 변수 사용
+        let searchResults = [];
+        let currentJsonpScript = null;
+
+        /**
+         * iTunes Search API 호출 (JSONP 방식)
+         * 공식 문서에서 안내하는 callback 파라미터를 사용한 방식입니다.
+         */
         function searchMusic() {
-            const query = document.getElementById('search-input').value.trim();
+            const queryInput = document.getElementById('search-input');
+            const query = queryInput.value.trim();
+            const resultsContainer = document.getElementById('results');
+
             if (!query) {
                 alert('검색어를 입력하세요.');
+                queryInput.focus();
                 return;
             }
 
-            // CORS 우회 프록시 URL 추가
-            const proxyUrl = 'https://corsproxy.io/?'; 
-
-            // 기존 iTunes API URL (URL 인코딩 필수)
-            const itunesUrl = `https://itunes.apple.com/search?term=${encodeURIComponent(query)}&media=music&entity=musicTrack&attribute=mixTerm&limit=20&country=KR`;
-            
-            // 최종 요청 URL: 프록시 URL + 인코딩된 iTunes URL
-            const url = proxyUrl + encodeURIComponent(itunesUrl);
-            
-            const resultsContainer = document.getElementById('results');
+            // 기존 결과 초기화
             resultsContainer.innerHTML = '<p>검색 중...</p>';
 
-            fetch(url)
-                .then(response => {
-                    if (!response.ok) {
-                        // 프록시 서버나 iTunes API에서 오류가 발생했을 때
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    // 데이터 처리 로직은 동일
-                    searchResults = data.results.sort((a, b) => b.trackCount - a.trackCount);
-                    displayResults(searchResults);
-                })
-                .catch(error => {
-                    console.error('Error fetching data:', error);
-                    // CORS 문제가 해결되지 않았거나 다른 네트워크/서버 오류 발생 시 메시지 출력
-                    resultsContainer.innerHTML = '<p>404!<br>데이터를 불러오는 중 오류가 발생했습니다.<br>CORS 프록시 문제일 수 있습니다. 다시 시도해 주세요.</p>';
-                });
+            // 이전 JSONP 스크립트 제거
+            if (currentJsonpScript) {
+                currentJsonpScript.remove();
+                currentJsonpScript = null;
+            }
+
+            const baseUrl = 'https://itunes.apple.com/search';
+
+            // 최신 Search API 규격에 맞는 파라미터 구성
+            const params = new URLSearchParams({
+                term: query,
+                media: 'music',          // 음악만 검색
+                entity: 'musicTrack',    // 음악 트랙 단위
+                country: 'KR',           // 한국 스토어
+                limit: '20',
+                lang: 'en_us',           // 문서상 지원값: en_us, ja_jp 
+                explicit: 'Yes',
+                callback: 'handleItunesResponse' // JSONP 콜백
+            });
+
+            // JSONP용 <script> 태그 동적 생성
+            const script = document.createElement('script');
+            script.src = `${baseUrl}?${params.toString()}`;
+            script.onerror = function () {
+                resultsContainer.innerHTML = `
+                    <p>
+                        데이터를 불러오는 중 오류가 발생했습니다.<br>
+                        잠시 후 다시 시도해 보세요.
+                    </p>
+                `;
+            };
+
+            currentJsonpScript = script;
+            document.body.appendChild(script);
+        }
+
+        /**
+         * iTunes Search API JSONP 콜백
+         * URL의 callback=handleItunesResponse 에 의해 호출됩니다.
+         */
+        function handleItunesResponse(data) {
+            const resultsContainer = document.getElementById('results');
+
+            if (!data || !Array.isArray(data.results)) {
+                resultsContainer.innerHTML = '<p>검색 결과가 없습니다.</p>';
+                return;
+            }
+
+            // 결과 정렬: 곡명 기준, 같은 곡명이면 아티스트명 기준
+            searchResults = data.results.slice().sort((a, b) => {
+                const nameA = (a.trackName || '').toLowerCase();
+                const nameB = (b.trackName || '').toLowerCase();
+                if (nameA < nameB) return -1;
+                if (nameA > nameB) return 1;
+                const artistA = (a.artistName || '').toLowerCase();
+                const artistB = (b.artistName || '').toLowerCase();
+                if (artistA < artistB) return -1;
+                if (artistA > artistB) return 1;
+                return 0;
+            });
+
+            displayResults(searchResults);
         }
 
         function displayResults(results) {
             const resultsContainer = document.getElementById('results');
             resultsContainer.innerHTML = '';
 
-            if (results.length === 0) {
+            if (!results || results.length === 0) {
                 resultsContainer.innerHTML = '<p>검색 결과가 없습니다.</p>';
                 return;
             }
@@ -283,13 +387,17 @@
                 const resultItem = document.createElement('div');
                 resultItem.classList.add('result-item');
 
+                const artworkUrl = item.artworkUrl100
+                    ? item.artworkUrl100.replace('100x100', '300x300')
+                    : '';
+
                 resultItem.innerHTML = `
-                    <div style="display: flex;">
-                        <img src="${item.artworkUrl100.replace("100x100", "300x300")}" alt="${sanitizeText(item.trackName)}">
+                    <div style="display: flex; flex-direction: row;">
+                        <img src="${artworkUrl}" alt="${sanitizeText(item.trackName || '')}">
                         <div class="result-info">
-                            <h3>${sanitizeText(item.trackName)}</h3>
-                            <p>아티스트: ${sanitizeText(item.artistName)}</p>
-                            <p>앨범: ${sanitizeText(item.collectionName)}</p>
+                            <h3>${sanitizeText(item.trackName || '제목 없음')}</h3>
+                            <p>아티스트: ${sanitizeText(item.artistName || '-')}</p>
+                            <p>앨범: ${sanitizeText(item.collectionName || '-')}</p>
                             <button onclick="toggleDetails(${index})">자세히 보기</button>
                         </div>
                     </div>
@@ -302,46 +410,59 @@
         function toggleDetails(index) {
             const detailsContainer = document.getElementById(`details-${index}`);
             const item = searchResults[index];
-            const highResArtworkUrl = item.artworkUrl100.replace("100x100", "600x600");
+
+            if (!item) return;
+
+            const highResArtworkUrl = item.artworkUrl100
+                ? item.artworkUrl100.replace('100x100', '600x600')
+                : '';
 
             if (detailsContainer.style.display === 'block') {
                 detailsContainer.style.display = 'none';
-                detailsContainer.innerHTML = ''; // 세부 정보 초기화
+                detailsContainer.innerHTML = '';
             } else {
-                const minutes = Math.floor(item.trackTimeMillis / 60000);
-                const seconds = Math.floor((item.trackTimeMillis % 60000) / 1000);
-                const duration = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                const minutes = Math.floor((item.trackTimeMillis || 0) / 60000);
+                const seconds = Math.floor(((item.trackTimeMillis || 0) % 60000) / 1000);
+                const duration = item.trackTimeMillis
+                    ? `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`
+                    : '-';
 
                 detailsContainer.style.display = 'block';
                 detailsContainer.innerHTML = `
-                    <img src="${highResArtworkUrl}" alt="${sanitizeText(item.trackName)}">
-                    <h3>노래 제목: ${sanitizeText(item.trackName)}</h3>
-                    <p>아티스트: ${sanitizeText(item.artistName)}</p>
-                    <p>앨범: ${sanitizeText(item.collectionName)}</p>
+                    <img src="${highResArtworkUrl}" alt="${sanitizeText(item.trackName || '')}">
+                    <h3>노래 제목: ${sanitizeText(item.trackName || '제목 없음')}</h3>
+                    <p>아티스트: ${sanitizeText(item.artistName || '-')}</p>
+                    <p>앨범: ${sanitizeText(item.collectionName || '-')}</p>
                     <p>곡 길이: ${duration}</p>
-                    <a href="${item.trackViewUrl}" target="_blank">iTunes에서 보기</a>
-                    <a href="${item.previewUrl}" target="_blank" style="margin-left: 10px;">미리 듣기</a>
+                    <a href="${item.trackViewUrl || '#'}" target="_blank">iTunes에서 보기</a>
+                    <a href="${item.previewUrl || '#'}" target="_blank" style="margin-left: 10px;">미리 듣기</a>
+                    ${item.previewUrl ? `
                     <audio controls style="display: block; margin-top: 10px;">
                         <source src="${item.previewUrl}" type="audio/mpeg">
                         브라우저가 오디오 요소를 지원하지 않습니다.
-                    </audio>
-                    <button onclick="updateVisionBox(${index})" style="margin-left: 10px;">올리기</button>
+                    </audio>` : ''}
+                    <button class="detail-button raise" onclick="updateVisionBox(${index})" style="margin-left: 10px;">올리기</button>
                 `;
             }
         }
 
         function updateVisionBox(index) {
             const item = searchResults[index];
+            if (!item) return;
+
             const visionCover = document.getElementById('vision-cover');
             const visionInfo = document.getElementById('vision-info');
             const visionTitle = document.getElementById('vision-title');
             const visionArtist = document.getElementById('vision-artist');
 
-            // 앨범 커버 URL을 고해상도로 변경
-            visionCover.src = item.artworkUrl100.replace("100x100", "600x600"); 
-            visionCover.style.display = 'block';
-            visionTitle.textContent = item.trackName;
-            visionArtist.textContent = `${item.artistName}`;
+            const highResArtworkUrl = item.artworkUrl100
+                ? item.artworkUrl100.replace('100x100', '600x600')
+                : '';
+
+            visionCover.src = highResArtworkUrl;
+            visionCover.style.display = highResArtworkUrl ? 'block' : 'none';
+            visionTitle.textContent = item.trackName || '제목 없음';
+            visionArtist.textContent = item.artistName || '';
             visionInfo.style.display = 'block';
         }
 
@@ -352,15 +473,16 @@
 
         function sanitizeText(text) {
             const div = document.createElement('div');
-            div.textContent = text;
+            div.textContent = text || '';
             return div.innerHTML;
         }
-    document.getElementById('search-input').addEventListener('keypress', function (e) {
+
+        // Enter 키로 검색
+        document.getElementById('search-input').addEventListener('keypress', function (e) {
             if (e.key === 'Enter') {
                 searchMusic();
             }
         });
     </script>
-    <p style="text-align: center; font-size: 12px; color: #555; margin-top: 10px;">iTunes의 데이터를 이용하여 정보를 제공합니다.</p>
 </body>
 </html>
