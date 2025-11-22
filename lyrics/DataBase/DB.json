@@ -5,6 +5,11 @@
   },
   "tracks": [
     {
+      "artist": "우예린",
+      "title": "붉은 장미",
+      "lyrics_path": "/else/RedRose.json"
+    },
+    {
       "artist": "정재욱",
       "title": "Season In The Sun",
       "lyrics_path": "/else/SeasonInTheSun.json"
