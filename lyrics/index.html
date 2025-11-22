@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lyrics LiveArea Player</title>
     <style>
-        /* LineSeed Regular 400 : 기본 영역 & 방송형 1줄 모드 */
+        /* LineSeed Regular 400 : 기본 영역 */
         @font-face {
             font-family: 'LineSeed';
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Rg.woff2') format('woff2');
@@ -13,7 +13,7 @@
             font-display: swap;
         }
 
-        /* LineSeed Bold 700 : 제목/컨트롤 등 */
+        /* LineSeed Bold 700 : 제목/굵은 텍스트 & 방송형 모드 */
         @font-face {
             font-family: 'LineSeed';
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Bd.woff2') format('woff2');
@@ -49,7 +49,7 @@
 
         /* ========== LiveArea (위, 가사만) ========== */
         #LiveAreaShell {
-            flex: 0 0 35vh; /* 높이 비율 */
+            flex: 0 0 35vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -96,15 +96,15 @@
                  0px    0px   1px #fc3c1c;
         }
 
-        /* === 방법 2: 방송형 1줄 모드 === */
+        /* === 방법 2: 방송형 1줄 모드 (LineSeed 700) === */
         #LiveArea.mode-single .live-line {
             font-family: 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-            font-weight: 700;
+            font-weight: 700;          /* ✅ 400 → 700 */
             font-size: 24px;
             color: #ffffff;
             -webkit-text-stroke: 0;
             text-stroke: 0;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.6); /* 살짝만 */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6);
         }
 
         /* 1줄 모드에서는 다음 줄 숨김 */
@@ -155,7 +155,7 @@
             cursor: default;
         }
 
-        /* 표시 방식 선택 영역 */
+        /* 표시 방식 선택 */
         #view-mode-controls {
             display: flex;
             flex-wrap: wrap;
@@ -270,7 +270,7 @@
 <div class="app">
     <!-- 위 : LiveArea -->
     <section id="LiveAreaShell">
-        <div id="LiveArea" class="mode-dual"><!-- 기본: 방법1 -->
+        <div id="LiveArea" class="mode-dual">
             <div class="live-line current" id="live-current">아직 재생 중인 가사가 없습니다.</div>
             <div class="live-line" id="live-next"></div>
         </div>
@@ -326,6 +326,7 @@
     let isPlaying     = false;
     let clearTimerId  = null;   // 끝난 후 LiveArea 비우기용
     let viewMode      = 'dual'; // 'dual' | 'single'
+    let playhead      = 0;      // 현재 진행 시간(초) - 일시정지/재개용
 
     // DOM
     const LiveAreaEl     = document.getElementById('LiveArea');
@@ -505,6 +506,7 @@
         syncedLines  = [];
         currentIndex = -1;
         isPlaying    = false;
+        playhead     = 0;
 
         if (timerId) {
             cancelAnimationFrame(timerId);
@@ -571,7 +573,7 @@
     }
 
     /* =========================
-       4. 재생 / 정지 / 리셋
+       4. 재생 / 정지(일시정지) / 리셋
        ========================= */
     function startPlayback() {
         if (!syncedLines.length) return;
@@ -586,8 +588,9 @@
         }
 
         isPlaying = true;
-        currentIndex = -1;
-        startTime = performance.now();
+
+        // pause 후 재개를 위해 playhead에서 이어서 시작
+        startTime = performance.now() - playhead * 1000;
 
         btnStart.disabled = true;
         btnStop.disabled  = false;
@@ -597,7 +600,8 @@
         const step = (now) => {
             if (!isPlaying) return;
 
-            const elapsed = (now - startTime) / 1000;
+            const elapsed = (now - startTime) / 1000; // 현재까지 재생된 시간(초)
+            playhead = elapsed;
 
             let idx = currentIndex;
             while (
@@ -616,6 +620,7 @@
             } else {
                 // 곡이 자연스럽게 끝난 경우
                 isPlaying = false;
+                playhead = 0; // 다음 재생은 처음부터
                 btnStart.disabled = false;
                 btnStop.disabled  = true;
                 playStatusEl.textContent = '재생이 끝났습니다.';
@@ -633,6 +638,7 @@
         timerId = requestAnimationFrame(step);
     }
 
+    // 정지 = 일시정지
     function stopPlayback() {
         if (timerId) {
             cancelAnimationFrame(timerId);
@@ -643,13 +649,15 @@
             clearTimerId = null;
         }
         isPlaying = false;
-        btnStart.disabled = !syncedLines.length;
+        // playhead는 그대로 두어 다음 재생 시 이어서 시작
+        btnStart.disabled = !syncedLines.length ? true : false;
         btnStop.disabled  = true;
-        playStatusEl.textContent = '정지되었습니다.';
+        playStatusEl.textContent = '일시정지되었습니다.';
     }
 
     function resetPlayback() {
         stopPlayback();
+        playhead = 0;
         if (syncedLines.length) {
             showLiveLines(0);
             playStatusEl.textContent = '처음으로 돌아갔습니다. 다시 "재생"을 눌러주세요.';
