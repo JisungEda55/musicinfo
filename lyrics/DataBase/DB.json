@@ -1,6 +1,6 @@
 {
   "meta": {
-    "lyrics_base_url": "lyrics/DataBase/LyricsDB",
+    "lyrics_base_url": "https://raw.githubusercontent.com/JisungEda55/musicinfo/refs/heads/main/lyrics/DataBase/LyricsDB",
     "notes": "각 track의 lyrics_path는 '/slug' 형태만 쓰며, 최종 URL은 lyrics_base_url + lyrics_path 로 조합함."
   },
   "tracks": [
