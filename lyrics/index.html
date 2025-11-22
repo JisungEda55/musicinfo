@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>간편 가사 검색기 + 재생기</title>
+    <title>간편 가사 검색기 + LiveArea</title>
     <style>
         /* LineSeed Regular 400 : 기본 영역 */
         @font-face {
@@ -13,11 +13,19 @@
             font-display: swap;
         }
 
-        /* LineSeed Bold 700 : 가사 재생 영역 */
+        /* LineSeed Bold 700 : 상단(라이브 영역 컨트롤 텍스트 등) */
         @font-face {
             font-family: 'LineSeed';
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Bd.woff2') format('woff2');
             font-weight: 700;
+            font-display: swap;
+        }
+
+        /* LiveArea용 OneStoreMobilePop 폰트 */
+        @font-face {
+            font-family: 'OneStoreMobilePop';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/ONE-Mobile-POP.woff') format('woff');
+            font-weight: normal;
             font-display: swap;
         }
 
@@ -40,7 +48,7 @@
         }
 
         /* =======================
-           위쪽: 가사 재생 영역
+           위쪽: LiveArea 포함 패널
            ======================= */
         #top-panel {
             flex: 1;
@@ -48,10 +56,11 @@
             border-bottom: 1px solid #333;
             display: flex;
             flex-direction: column;
+            gap: 8px;
         }
 
-        /* 가사 재생 영역 전체는 700 굵기 사용 */
-        #top-panel, 
+        /* 상단 패널 텍스트는 Bold LineSeed (LiveArea는 아래에서 따로 덮어씀) */
+        #top-panel,
         #top-panel * {
             font-family: 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
             font-weight: 700;
@@ -71,43 +80,57 @@
         }
 
         #now-playing {
-            font-size: 16px;
-            margin-bottom: 4px;
+            font-size: 15px;
         }
         #play-status {
-            font-size: 13px;
+            font-size: 12px;
             color: #aaa;
-            margin-bottom: 10px;
         }
 
-        /* 가사 3줄 표시 영역 */
-        #player-lyrics {
+        /* ========== LiveArea ========== */
+        /* 가사만 2줄, 배경 투명 */
+        #LiveArea {
             flex: 1;
-            background-color: #1e1e1e;
-            border-radius: 8px;
-            padding: 16px;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            gap: 6px;
+            gap: 4px;
             text-align: center;
-            overflow: hidden; /* 스크롤 없이 3줄만 보이게 */
+            background: transparent; /* 투명 */
+            padding: 0;
         }
 
-        .player-line {
+        /* LiveArea 가사 전용 스타일 */
+        #LiveArea .live-line {
             min-height: 1.4em;
-            opacity: 0.4;
-            font-size: 15px;
-            transition: opacity 0.15s, transform 0.15s;
+            font-size: 18px;
+            opacity: 0.6;
+            white-space: pre-wrap;
+
+            /* 여기서 LiveArea만 OneStoreMobilePop 적용 */
+            font-family: 'OneStoreMobilePop', 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            font-weight: normal;
+
+            /* 흰색 글자 + 빨간 테두리 (#fc3c1c) */
+            color: #ffffff;
+            -webkit-text-stroke: 2px #fc3c1c;   /* 웹킷 계열에서 굵은 테두리 */
+            text-stroke: 2px #fc3c1c;
+
+            /* 다른 브라우저용 대체(테두리 느낌 나게) */
+            text-shadow:
+                -1px -1px 0 #fc3c1c,
+                 1px -1px 0 #fc3c1c,
+                -1px  1px 0 #fc3c1c,
+                 1px  1px 0 #fc3c1c,
+                 0px  0px 2px #fc3c1c;
         }
-        .player-line.current {
+
+        #LiveArea .live-line.current {
             opacity: 1;
             transform: scale(1.02);
-            color: #ffd700;
         }
 
         #play-controls {
-            margin-top: 10px;
             display: flex;
             gap: 8px;
         }
@@ -121,7 +144,7 @@
             font-size: 14px;
             cursor: pointer;
             font-family: 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-            font-weight: 400; /* 버튼은 기본 400 */
+            font-weight: 400;
         }
         button:hover { background-color: #0056b3; }
         button:disabled {
@@ -181,7 +204,7 @@
             overflow-y: auto;
             white-space: pre-wrap;
             line-height: 1.5;
-            font-weight: 400; /* 상세 가사 영역은 400 */
+            font-weight: 400;
         }
         #lyrics-detail h3 {
             margin-top: 0;
@@ -222,16 +245,15 @@
 </head>
 <body>
 <div class="app">
-    <!-- 위: 가사 재생기 -->
+    <!-- 위: LiveArea + 컨트롤 -->
     <section id="top-panel">
         <div id="now-playing">지금 선택된 곡이 없습니다.</div>
         <div id="play-status">아래에서 곡을 선택하고 <b>"가사 재생"</b>을 눌러주세요.</div>
 
-        <!-- 가사 3줄 -->
-        <div id="player-lyrics">
-            <div class="player-line" id="line-prev"></div>
-            <div class="player-line current" id="line-current">아직 재생 중인 가사가 없습니다.</div>
-            <div class="player-line" id="line-next"></div>
+        <!-- LiveArea: 가사만 2줄, 배경 투명 -->
+        <div id="LiveArea">
+            <div class="live-line current" id="live-current">아직 재생 중인 가사가 없습니다.</div>
+            <div class="live-line" id="live-next"></div>
         </div>
 
         <div id="play-controls">
@@ -241,7 +263,7 @@
         </div>
     </section>
 
-    <!-- 아래: 검색 + 가사 보기 -->
+    <!-- 아래: 검색 + 가사 상세 -->
     <section id="bottom-panel">
         <div id="search-area">
             <input type="text" id="searchInput" placeholder="노래 제목 또는 가수 입력 (예: Butter, IU)">
@@ -262,16 +284,15 @@
     let syncedLines   = [];   // [{ time, text }]
     let timerId       = null;
     let startTime     = 0;
-    let currentIndex  = -1;   // 현재 줄 index
+    let currentIndex  = -1;
     let lastTime      = 0;
     let isPlaying     = false;
 
-    // DOM
+    // DOM 참조
     const nowPlayingEl   = document.getElementById('now-playing');
     const playStatusEl   = document.getElementById('play-status');
-    const linePrevEl     = document.getElementById('line-prev');
-    const lineCurrEl     = document.getElementById('line-current');
-    const lineNextEl     = document.getElementById('line-next');
+    const liveCurrentEl  = document.getElementById('live-current'); // LiveArea 현재 줄
+    const liveNextEl     = document.getElementById('live-next');    // LiveArea 다음 줄
     const btnStart       = document.getElementById('btn-start');
     const btnStop        = document.getElementById('btn-stop');
     const btnReset       = document.getElementById('btn-reset');
@@ -349,7 +370,7 @@
         content += `
             <div id="detail-buttons">
                 <button id="btn-play-from-detail">가사 재생</button>
-                <button id="btn-scroll-top">위 재생영역으로 스크롤</button>
+                <button id="btn-scroll-top">LiveArea로 스크롤</button>
             </div>
         `;
 
@@ -367,7 +388,6 @@
     /* =========================
        3. LRC 파싱 + 재생 준비
        ========================= */
-
     function parseLRC(lrcText) {
         const lines = lrcText.split(/\r?\n/);
         const result = [];
@@ -395,30 +415,28 @@
         return result;
     }
 
-    function showTripleLines(activeIndex) {
+    // LiveArea: 현재 줄 + 다음 줄만 표시
+    function showLiveLines(activeIndex) {
         if (!syncedLines.length) {
-            linePrevEl.textContent = "";
-            lineCurrEl.textContent = "재생할 가사가 없습니다.";
-            lineNextEl.textContent = "";
+            liveCurrentEl.textContent = "재생할 가사가 없습니다.";
+            liveNextEl.textContent = "";
             return;
         }
 
         if (activeIndex < 0) activeIndex = 0;
-        if (activeIndex >= syncedLines.length) activeIndex = syncedLines.length - 1;
+        if (activeIndex >= syncedLines.length) {
+            activeIndex = syncedLines.length - 1;
+        }
 
         currentIndex = activeIndex;
 
-        const prevText = activeIndex > 0
-            ? syncedLines[activeIndex - 1].text
-            : "";
         const currText = syncedLines[activeIndex].text;
         const nextText = activeIndex + 1 < syncedLines.length
             ? syncedLines[activeIndex + 1].text
             : "";
 
-        linePrevEl.textContent = prevText;
-        lineCurrEl.textContent = currText;
-        lineNextEl.textContent = nextText;
+        liveCurrentEl.textContent = currText;
+        liveNextEl.textContent = nextText || "";
     }
 
     function preparePlaybackFromSong(song, autoStart = false) {
@@ -448,7 +466,7 @@
             }
         }
 
-        // 싱크 없으면 plainLyrics를 2초 간격 유사 싱크
+        // 싱크 없으면 plainLyrics를 2초 간격으로 유사 싱크
         if (!hasSynced && song.plainLyrics) {
             const plainLines = song.plainLyrics
                 .split(/\r?\n/)
@@ -464,9 +482,8 @@
         }
 
         if (!syncedLines.length) {
-            linePrevEl.textContent = "";
-            lineCurrEl.textContent = "재생 가능한 가사가 없습니다.";
-            lineNextEl.textContent = "";
+            liveCurrentEl.textContent = "재생 가능한 가사가 없습니다.";
+            liveNextEl.textContent = "";
             playStatusEl.textContent = '가사 정보가 없어 재생할 수 없습니다.';
             btnStart.disabled = true;
             btnStop.disabled  = true;
@@ -474,7 +491,8 @@
             return;
         }
 
-        showTripleLines(0);
+        // LiveArea 초기 상태: 첫 줄 + 두 번째 줄
+        showLiveLines(0);
         lastTime = syncedLines[syncedLines.length - 1].time;
 
         btnStart.disabled = false;
@@ -513,7 +531,7 @@
         const step = (now) => {
             if (!isPlaying) return;
 
-            const elapsed = (now - startTime) / 1000;
+            const elapsed = (now - startTime) / 1000; // 초
 
             let idx = currentIndex;
             while (
@@ -524,7 +542,7 @@
             }
 
             if (idx !== currentIndex && idx >= 0) {
-                showTripleLines(idx);
+                showLiveLines(idx);
             }
 
             if (elapsed <= lastTime + 3) {
@@ -554,8 +572,11 @@
     function resetPlayback() {
         stopPlayback();
         if (syncedLines.length) {
-            showTripleLines(0);
+            showLiveLines(0);
             playStatusEl.textContent = '처음으로 돌아갔습니다. 다시 "재생"을 눌러주세요.';
+        } else {
+            liveCurrentEl.textContent = "아직 재생 중인 가사가 없습니다.";
+            liveNextEl.textContent = "";
         }
     }
 
