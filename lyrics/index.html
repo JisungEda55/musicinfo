@@ -15,7 +15,6 @@
             color: #ffffff;
         }
 
-        /* 전체 앱 레이아웃: 위/아래 2분할 */
         .app {
             min-height: 100vh;
             display: flex;
@@ -31,7 +30,7 @@
         }
 
         #bottom-panel {
-            flex: 1.2; /* 아래 쪽을 약간 더 크게 */
+            flex: 1.2;
             padding: 16px;
             display: flex;
             flex-direction: column;
@@ -39,15 +38,11 @@
         }
 
         @media (max-width: 768px) {
-            #top-panel {
-                flex: 0.9;
-            }
-            #bottom-panel {
-                flex: 1.1;
-            }
+            #top-panel { flex: 0.9; }
+            #bottom-panel { flex: 1.1; }
         }
 
-        /* 상단: 플레이어 영역 */
+        /* 위: 재생 영역 */
         #now-playing {
             font-size: 16px;
             font-weight: bold;
@@ -63,16 +58,22 @@
             flex: 1;
             background-color: #1e1e1e;
             border-radius: 8px;
-            padding: 12px;
-            overflow-y: auto;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* 3줄을 세로 중앙 정렬 */
+            gap: 6px;
+            text-align: center;
+            overflow: hidden; /* 스크롤 없이 3줄만 보이게 */
         }
 
         .player-line {
-            padding: 4px 0;
-            opacity: 0.5;
+            min-height: 1.4em;
+            opacity: 0.4;
+            font-size: 15px;
             transition: opacity 0.15s, transform 0.15s;
         }
-        .player-line.active {
+        .player-line.current {
             opacity: 1;
             font-weight: 600;
             transform: scale(1.02);
@@ -80,7 +81,7 @@
         }
 
         #play-controls {
-            margin-top: 8px;
+            margin-top: 10px;
             display: flex;
             gap: 8px;
         }
@@ -94,15 +95,13 @@
             font-size: 14px;
             cursor: pointer;
         }
-        button:hover {
-            background-color: #0056b3;
-        }
+        button:hover { background-color: #0056b3; }
         button:disabled {
             background-color: #555;
             cursor: default;
         }
 
-        /* 하단: 검색 영역 */
+        /* 아래: 검색 영역 */
         #search-area {
             display: flex;
             gap: 8px;
@@ -132,9 +131,7 @@
             cursor: pointer;
             transition: background 0.15s;
         }
-        .song-item:hover {
-            background-color: #2a2a2a;
-        }
+        .song-item:hover { background-color: #2a2a2a; }
         .song-title {
             font-weight: 600;
             font-size: 14px;
@@ -176,9 +173,6 @@
             gap: 8px;
             flex-wrap: wrap;
         }
-        #detail-buttons button {
-            flex: none;
-        }
 
         .small-text {
             font-size: 12px;
@@ -198,9 +192,14 @@
     <section id="top-panel">
         <div id="now-playing">지금 선택된 곡이 없습니다.</div>
         <div id="play-status">아래에서 곡을 선택하고 <b>"가사 재생"</b>을 눌러주세요.</div>
+
+        <!-- 여기에서 항상 3줄만 보여줌 -->
         <div id="player-lyrics">
-            <p class="empty-msg">아직 재생 중인 가사가 없습니다.</p>
+            <div class="player-line" id="line-prev"></div>
+            <div class="player-line current" id="line-current">아직 재생 중인 가사가 없습니다.</div>
+            <div class="player-line" id="line-next"></div>
         </div>
+
         <div id="play-controls">
             <button id="btn-start" disabled>재생</button>
             <button id="btn-stop" disabled>정지</button>
@@ -224,19 +223,21 @@
 <script>
     const API_URL = "https://lrclib.net/api/search";
 
-    // 재생 관련 상태
-    let currentSong = null;
-    let syncedLines = [];       // [{ time: number, text: string }, ...]
-    let timerId = null;
-    let startTime = 0;
-    let currentIndex = -1;
-    let lastTime = 0;
-    let isPlaying = false;
+    // 재생 상태
+    let currentSong   = null;
+    let syncedLines   = [];   // [{ time, text }]
+    let timerId       = null;
+    let startTime     = 0;
+    let currentIndex  = -1;   // 현재 재생 중인 줄 index
+    let lastTime      = 0;
+    let isPlaying     = false;
 
-    // DOM 참조
+    // DOM
     const nowPlayingEl   = document.getElementById('now-playing');
     const playStatusEl   = document.getElementById('play-status');
-    const playerLyricsEl = document.getElementById('player-lyrics');
+    const linePrevEl     = document.getElementById('line-prev');
+    const lineCurrEl     = document.getElementById('line-current');
+    const lineNextEl     = document.getElementById('line-next');
     const btnStart       = document.getElementById('btn-start');
     const btnStop        = document.getElementById('btn-stop');
     const btnReset       = document.getElementById('btn-reset');
@@ -247,7 +248,7 @@
     const lyricsDetailEl = document.getElementById('lyrics-detail');
 
     /* =========================
-       1. 검색 로직
+       1. 검색
        ========================= */
     async function searchLyrics() {
         const query = searchInput.value.trim();
@@ -260,8 +261,8 @@
         lyricsDetailEl.innerHTML = "<p class='empty-msg'>검색 결과에서 곡을 선택하면 가사가 표시됩니다.</p>";
 
         try {
-            const response = await fetch(`${API_URL}?q=${encodeURIComponent(query)}`);
-            const data = await response.json();
+            const res  = await fetch(`${API_URL}?q=${encodeURIComponent(query)}`);
+            const data = await res.json();
 
             resultList.innerHTML = "";
 
@@ -270,7 +271,6 @@
                 return;
             }
 
-            // 최대 10개까지만 표시
             data.slice(0, 10).forEach(song => {
                 const li = document.createElement('li');
                 li.className = 'song-item';
@@ -282,8 +282,8 @@
                 resultList.appendChild(li);
             });
 
-        } catch (err) {
-            console.error(err);
+        } catch (e) {
+            console.error(e);
             resultList.innerHTML = "<li class='empty-msg' style='padding:4px 0; color:#f66;'>에러가 발생했습니다.</li>";
         }
     }
@@ -299,7 +299,6 @@
         content += `<hr>`;
 
         if (song.syncedLyrics) {
-            // 시간 태그만 색 입혀서 보여주기
             const highlighted = song.syncedLyrics.replace(
                 /\[(\d{2}:\d{2}\.\d{2})]/g,
                 '<span class="time-tag">[$1]</span>'
@@ -308,7 +307,7 @@
             content += `<p class="small-text">이 곡은 싱크(LRC) 가사가 있습니다. "가사 재생" 기능을 사용할 수 있어요.</p>`;
         } else if (song.plainLyrics) {
             content += song.plainLyrics;
-            content += `<p class="small-text">이 곡은 싱크 정보가 없어, 한 줄씩 일정한 속도로 흘려보내는 방식으로 재생됩니다.</p>`;
+            content += `<p class="small-text">싱크 정보가 없어, 일정 속도로 한 줄씩 흘려보내는 방식으로 재생됩니다.</p>`;
         } else {
             content += "가사 정보가 등록되지 않은 곡입니다.";
         }
@@ -322,24 +321,20 @@
 
         lyricsDetailEl.innerHTML = content;
 
-        // 버튼 이벤트 연결
-        const playFromDetailBtn = document.getElementById('btn-play-from-detail');
-        const scrollTopBtn      = document.getElementById('btn-scroll-top');
+        document.getElementById('btn-play-from-detail')
+            .addEventListener('click', () => preparePlaybackFromSong(song, true));
 
-        playFromDetailBtn.addEventListener('click', () => {
-            preparePlaybackFromSong(song, true);
-        });
-
-        scrollTopBtn.addEventListener('click', () => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        });
+        document.getElementById('btn-scroll-top')
+            .addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
     }
 
     /* =========================
-       3. 상단: 재생 준비 / 파서
+       3. LRC 파싱 + 재생 준비
        ========================= */
 
-    // LRC 포맷 파서 → [{ time: 초, text }]
+    // LRC 포맷 → [{ time(초), text }, ...]
     function parseLRC(lrcText) {
         const lines = lrcText.split(/\r?\n/);
         const result = [];
@@ -353,53 +348,54 @@
             const times = [];
 
             while ((match = timeTagRegex.exec(line)) !== null) {
-                const min = parseInt(match[1], 10);
-                const sec = parseInt(match[2], 10);
+                const min   = parseInt(match[1], 10);
+                const sec   = parseInt(match[2], 10);
                 const centi = match[3] ? parseInt(match[3], 10) : 0;
                 const totalSeconds = min * 60 + sec + centi / 100;
                 times.push(totalSeconds);
             }
 
-            times.forEach(t => {
-                result.push({ time: t, text });
-            });
+            times.forEach(t => result.push({ time: t, text }));
         }
 
         result.sort((a, b) => a.time - b.time);
         return result;
     }
 
-    // 재생용 영역에 줄 렌더링
-    function renderPlayerLines() {
-        playerLyricsEl.innerHTML = '';
-        syncedLines.forEach((line, idx) => {
-            const div = document.createElement('div');
-            div.className = 'player-line';
-            div.dataset.index = idx;
-            div.textContent = line.text || ' ';
-            playerLyricsEl.appendChild(div);
-        });
-    }
-
-    function updateHighlight() {
-        const nodes = playerLyricsEl.querySelectorAll('.player-line');
-        nodes.forEach(n => n.classList.remove('active'));
-
-        if (currentIndex >= 0 && currentIndex < nodes.length) {
-            const active = nodes[currentIndex];
-            active.classList.add('active');
-            active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // 위 3줄(이전 / 현재 / 다음) 세팅
+    function showTripleLines(activeIndex) {
+        if (!syncedLines.length) {
+            linePrevEl.textContent = "";
+            lineCurrEl.textContent = "재생할 가사가 없습니다.";
+            lineNextEl.textContent = "";
+            return;
         }
+
+        if (activeIndex < 0) activeIndex = 0;
+        if (activeIndex >= syncedLines.length) activeIndex = syncedLines.length - 1;
+
+        currentIndex = activeIndex;
+
+        const prevText = activeIndex > 0
+            ? syncedLines[activeIndex - 1].text
+            : "";
+        const currText = syncedLines[activeIndex].text;
+        const nextText = activeIndex + 1 < syncedLines.length
+            ? syncedLines[activeIndex + 1].text
+            : "";
+
+        linePrevEl.textContent = prevText;
+        lineCurrEl.textContent = currText;
+        lineNextEl.textContent = nextText;
     }
 
-    // 선택한 곡으로 재생 준비
     function preparePlaybackFromSong(song, autoStart = false) {
         if (!song) return;
 
-        currentSong   = song;
-        syncedLines   = [];
-        currentIndex  = -1;
-        isPlaying     = false;
+        currentSong  = song;
+        syncedLines  = [];
+        currentIndex = -1;
+        isPlaying    = false;
 
         if (timerId) {
             cancelAnimationFrame(timerId);
@@ -420,21 +416,25 @@
             }
         }
 
-        // 싱크가 없는 경우: plainLyrics를 2초 간격으로 흘리는 "유사 싱크" 생성
+        // 싱크 없으면 plainLyrics를 2초 간격으로 유사싱크
         if (!hasSynced && song.plainLyrics) {
-            const plainLines = song.plainLyrics.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
-            let time = 0;
+            const plainLines = song.plainLyrics
+                .split(/\r?\n/)
+                .map(l => l.trim())
+                .filter(Boolean);
+            let t = 0;
             const interval = 2; // 2초 간격
             syncedLines = plainLines.map(text => {
-                const obj = { time, text };
-                time += interval;
+                const obj = { time: t, text };
+                t += interval;
                 return obj;
             });
         }
 
         if (!syncedLines.length) {
-            // 재생 가능한 게 아무것도 없는 경우
-            playerLyricsEl.innerHTML = '<p class="empty-msg">재생 가능한 가사가 없습니다.</p>';
+            linePrevEl.textContent = "";
+            lineCurrEl.textContent = "재생 가능한 가사가 없습니다.";
+            lineNextEl.textContent = "";
             playStatusEl.textContent = '가사 정보가 없어 재생할 수 없습니다.';
             btnStart.disabled = true;
             btnStop.disabled  = true;
@@ -442,12 +442,14 @@
             return;
         }
 
-        renderPlayerLines();
+        // 위에 3줄 초기 표시 (처음 줄 기준)
+        showTripleLines(0);
         lastTime = syncedLines[syncedLines.length - 1].time;
 
         btnStart.disabled = false;
         btnStop.disabled  = true;
         btnReset.disabled = false;
+
         playStatusEl.textContent = hasSynced
             ? '싱크 가사 준비 완료! "재생" 버튼을 눌러주세요.'
             : '싱크 없는 가사를 일정 속도로 흘려보내는 모드입니다. "재생" 버튼을 눌러주세요.';
@@ -458,7 +460,7 @@
     }
 
     /* =========================
-       4. 재생 컨트롤 (재생 / 정지 / 리셋)
+       4. 재생 / 정지 / 리셋
        ========================= */
     function startPlayback() {
         if (!syncedLines.length) return;
@@ -469,7 +471,7 @@
         }
 
         isPlaying = true;
-        currentIndex = -1;
+        currentIndex = -1;            // 처음부터 다시
         startTime = performance.now();
 
         btnStart.disabled = true;
@@ -479,7 +481,8 @@
 
         const step = (now) => {
             if (!isPlaying) return;
-            const elapsed = (now - startTime) / 1000; // 초 단위
+
+            const elapsed = (now - startTime) / 1000; // 초
 
             let idx = currentIndex;
             while (
@@ -489,15 +492,13 @@
                 idx++;
             }
 
-            if (idx !== currentIndex) {
-                currentIndex = idx;
-                updateHighlight();
+            if (idx !== currentIndex && idx >= 0) {
+                showTripleLines(idx);
             }
 
             if (elapsed <= lastTime + 3) {
                 timerId = requestAnimationFrame(step);
             } else {
-                // 재생 종료
                 isPlaying = false;
                 btnStart.disabled = false;
                 btnStop.disabled  = true;
@@ -521,9 +522,10 @@
 
     function resetPlayback() {
         stopPlayback();
-        currentIndex = -1;
-        updateHighlight();
-        playStatusEl.textContent = '처음으로 돌아갔습니다. 다시 "재생"을 눌러주세요.';
+        if (syncedLines.length) {
+            showTripleLines(0);
+            playStatusEl.textContent = '처음으로 돌아갔습니다. 다시 "재생"을 눌러주세요.';
+        }
     }
 
     /* =========================
