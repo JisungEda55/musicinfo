@@ -5,14 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>간편 가사 검색기 + 재생기</title>
     <style>
+        /* LineSeed Regular 400 : 기본 영역 */
+        @font-face {
+            font-family: 'LineSeed';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Rg.woff2') format('woff2');
+            font-weight: 400;
+            font-display: swap;
+        }
+
+        /* LineSeed Bold 700 : 가사 재생 영역 */
+        @font-face {
+            font-family: 'LineSeed';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Bd.woff2') format('woff2');
+            font-weight: 700;
+            font-display: swap;
+        }
+
         * {
             box-sizing: border-box;
         }
+
         body {
             margin: 0;
-            font-family: 'Apple SD Gothic Neo', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
             background-color: #121212;
             color: #ffffff;
+            font-family: 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            font-weight: 400; /* 기본은 400 */
         }
 
         .app {
@@ -21,12 +39,22 @@
             flex-direction: column;
         }
 
+        /* =======================
+           위쪽: 가사 재생 영역
+           ======================= */
         #top-panel {
             flex: 1;
             padding: 16px;
             border-bottom: 1px solid #333;
             display: flex;
             flex-direction: column;
+        }
+
+        /* 가사 재생 영역 전체는 700 굵기 사용 */
+        #top-panel, 
+        #top-panel * {
+            font-family: 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            font-weight: 700;
         }
 
         #bottom-panel {
@@ -42,10 +70,8 @@
             #bottom-panel { flex: 1.1; }
         }
 
-        /* 위: 재생 영역 */
         #now-playing {
             font-size: 16px;
-            font-weight: bold;
             margin-bottom: 4px;
         }
         #play-status {
@@ -54,6 +80,7 @@
             margin-bottom: 10px;
         }
 
+        /* 가사 3줄 표시 영역 */
         #player-lyrics {
             flex: 1;
             background-color: #1e1e1e;
@@ -61,7 +88,7 @@
             padding: 16px;
             display: flex;
             flex-direction: column;
-            justify-content: center; /* 3줄을 세로 중앙 정렬 */
+            justify-content: center;
             gap: 6px;
             text-align: center;
             overflow: hidden; /* 스크롤 없이 3줄만 보이게 */
@@ -75,7 +102,6 @@
         }
         .player-line.current {
             opacity: 1;
-            font-weight: 600;
             transform: scale(1.02);
             color: #ffd700;
         }
@@ -94,6 +120,8 @@
             color: white;
             font-size: 14px;
             cursor: pointer;
+            font-family: 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            font-weight: 400; /* 버튼은 기본 400 */
         }
         button:hover { background-color: #0056b3; }
         button:disabled {
@@ -101,7 +129,9 @@
             cursor: default;
         }
 
-        /* 아래: 검색 영역 */
+        /* =======================
+           아래쪽: 검색 / 가사 상세
+           ======================= */
         #search-area {
             display: flex;
             gap: 8px;
@@ -114,6 +144,8 @@
             font-size: 15px;
             background-color: #1e1e1e;
             color: #fff;
+            font-family: 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            font-weight: 400;
         }
 
         #result-list {
@@ -133,7 +165,7 @@
         }
         .song-item:hover { background-color: #2a2a2a; }
         .song-title {
-            font-weight: 600;
+            font-weight: 400;
             font-size: 14px;
         }
         .song-artist {
@@ -149,11 +181,13 @@
             overflow-y: auto;
             white-space: pre-wrap;
             line-height: 1.5;
+            font-weight: 400; /* 상세 가사 영역은 400 */
         }
         #lyrics-detail h3 {
             margin-top: 0;
             margin-bottom: 6px;
             font-size: 15px;
+            font-weight: 400;
         }
         #lyrics-detail hr {
             border: none;
@@ -193,7 +227,7 @@
         <div id="now-playing">지금 선택된 곡이 없습니다.</div>
         <div id="play-status">아래에서 곡을 선택하고 <b>"가사 재생"</b>을 눌러주세요.</div>
 
-        <!-- 여기에서 항상 3줄만 보여줌 -->
+        <!-- 가사 3줄 -->
         <div id="player-lyrics">
             <div class="player-line" id="line-prev"></div>
             <div class="player-line current" id="line-current">아직 재생 중인 가사가 없습니다.</div>
@@ -228,7 +262,7 @@
     let syncedLines   = [];   // [{ time, text }]
     let timerId       = null;
     let startTime     = 0;
-    let currentIndex  = -1;   // 현재 재생 중인 줄 index
+    let currentIndex  = -1;   // 현재 줄 index
     let lastTime      = 0;
     let isPlaying     = false;
 
@@ -334,7 +368,6 @@
        3. LRC 파싱 + 재생 준비
        ========================= */
 
-    // LRC 포맷 → [{ time(초), text }, ...]
     function parseLRC(lrcText) {
         const lines = lrcText.split(/\r?\n/);
         const result = [];
@@ -362,7 +395,6 @@
         return result;
     }
 
-    // 위 3줄(이전 / 현재 / 다음) 세팅
     function showTripleLines(activeIndex) {
         if (!syncedLines.length) {
             linePrevEl.textContent = "";
@@ -416,14 +448,14 @@
             }
         }
 
-        // 싱크 없으면 plainLyrics를 2초 간격으로 유사싱크
+        // 싱크 없으면 plainLyrics를 2초 간격 유사 싱크
         if (!hasSynced && song.plainLyrics) {
             const plainLines = song.plainLyrics
                 .split(/\r?\n/)
                 .map(l => l.trim())
                 .filter(Boolean);
             let t = 0;
-            const interval = 2; // 2초 간격
+            const interval = 2;
             syncedLines = plainLines.map(text => {
                 const obj = { time: t, text };
                 t += interval;
@@ -442,7 +474,6 @@
             return;
         }
 
-        // 위에 3줄 초기 표시 (처음 줄 기준)
         showTripleLines(0);
         lastTime = syncedLines[syncedLines.length - 1].time;
 
@@ -471,7 +502,7 @@
         }
 
         isPlaying = true;
-        currentIndex = -1;            // 처음부터 다시
+        currentIndex = -1;
         startTime = performance.now();
 
         btnStart.disabled = true;
@@ -482,7 +513,7 @@
         const step = (now) => {
             if (!isPlaying) return;
 
-            const elapsed = (now - startTime) / 1000; // 초
+            const elapsed = (now - startTime) / 1000;
 
             let idx = currentIndex;
             while (
