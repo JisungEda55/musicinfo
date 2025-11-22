@@ -484,6 +484,9 @@
     const downloadJsonBtn = document.getElementById('downloadJsonBtn');
     const jsonStatus = document.getElementById('jsonStatus');
 
+    // ✅ 테이블 스크롤 영역
+    const tableWrapper = document.querySelector('.table-wrapper');
+
     // === 상태 ===
     let lyricsLines = []; // [{ time: "00:00", line: "..." }]
 
@@ -714,6 +717,22 @@
         });
 
         updateJsonOutput();
+
+        // ✅ 싱크 중이면 현재 줄을 세로 중앙으로 스크롤
+        if (syncModeActive && tableWrapper) {
+            const currentRow = lyricsTbody.querySelector('tr.sync-current');
+            if (currentRow) {
+                const wrapperRect = tableWrapper.getBoundingClientRect();
+                const rowRect = currentRow.getBoundingClientRect();
+
+                // 현재 스크롤 위치 + (현재 줄의 중앙이 wrapper 중앙에 오도록 offset 계산)
+                const offset =
+                    (rowRect.top - wrapperRect.top)
+                    - (wrapperRect.height / 2 - rowRect.height / 2);
+
+                tableWrapper.scrollTop += offset;
+            }
+        }
     }
 
     // === JSON 출력 업데이트 ===
