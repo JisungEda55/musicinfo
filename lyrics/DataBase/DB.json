@@ -5,6 +5,11 @@
   },
   "tracks": [
     {
+      "artist": "Hebi (헤비)",
+      "title": "sketch",
+      "lyrics_path": "/Hebi/sketch.json"
+    },
+    {
       "artist": "음율",
       "title": "파도혁명",
       "lyrics_path": "/UmYull/waverevolution.json"
