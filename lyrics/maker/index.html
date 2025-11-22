@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>가사 JSON 생성기 (Lyrics JSON Builder)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- 파비콘 (원하면 수정 가능) -->
+    <link rel="icon" type="image/png" href="https://i.ibb.co/SDpQchby/IMG-4921.png">
+
+    <!-- Tesseract.js (OCR용) -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+
+    <style>
+        /* 폰트 */
+        @font-face {
+            font-family: 'LineSeed';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Rg.woff2') format('woff2');
+            font-weight: 400;
+            font-display: swap;
+        }
+        @font-face {
+            font-family: 'LineSeed';
+            src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Bd.woff2') format('woff2');
+            font-weight: 700;
+            font-display: swap;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0f1115;
+            color: #f5f5f5;
+            font-family: 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+        }
+
+        .app {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 16px;
+        }
+
+        header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        header h1 {
+            font-size: 20px;
+            margin: 0;
+            font-weight: 700;
+        }
+        header span.sub {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+            gap: 16px;
+        }
+
+        @media (max-width: 900px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: #171921;
+            border-radius: 10px;
+            padding: 12px 14px;
+            border: 1px solid #252839;
+        }
+
+        .card-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .card-title .tag {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: #252c3f;
+            color: #9fb4ff;
+        }
+
+        label {
+            font-size: 12px;
+            display: block;
+            margin-bottom: 4px;
+            color: #cfd4ff;
+        }
+
+        input[type="text"], textarea, input[type="number"] {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #30354a;
+            background: #10121a;
+            color: #f5f5f5;
+            font-family: inherit;
+            font-size: 13px;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus,
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #4c8dff;
+            box-shadow: 0 0 0 1px rgba(76, 141, 255, 0.4);
+        }
+
+        .row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .row > div {
+            flex: 1;
+        }
+
+        .small {
+            font-size: 11px;
+            color: #999;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 7px 12px;
+            border-radius: 6px;
+            border: none;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+            background: #2d6bff;
+            color: #fff;
+            transition: background 0.15s, transform 0.05s;
+        }
+        .btn.secondary {
+            background: #272b3a;
+            color: #e2e5ff;
+        }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+        .btn:hover:not(:disabled) {
+            background: #2355cc;
+        }
+        .btn.secondary:hover:not(:disabled) {
+            background: #31354a;
+        }
+        .btn:active:not(:disabled) {
+            transform: translateY(1px);
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .tabs {
+            display: inline-flex;
+            border-radius: 999px;
+            background: #11131b;
+            padding: 3px;
+            border: 1px solid #262a3a;
+        }
+        .tab {
+            padding: 4px 10px;
+            font-size: 11px;
+            cursor: pointer;
+            border-radius: 999px;
+            color: #aaa;
+            user-select: none;
+        }
+        .tab.active {
+            background: #2e3650;
+            color: #fff;
+        }
+
+        .section-gap { margin-top: 8px; }
+
+        .hidden { display: none !important; }
+
+        .badge {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 999px;
+            background: #272b3a;
+            color: #9fb4ff;
+        }
+
+        .status-bar {
+            font-size: 11px;
+            color: #a0a4c0;
+            margin-top: 4px;
+        }
+
+        /* 라인 테이블 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        th, td {
+            border-bottom: 1px solid #252839;
+            padding: 4px 6px;
+            text-align: left;
+        }
+        th {
+            font-weight: 600;
+            font-size: 11px;
+            color: #aab0d5;
+        }
+        tr:hover td {
+            background: #1f2230;
+        }
+        .time-input {
+            width: 70px;
+        }
+        .line-input {
+            width: 100%;
+        }
+        .table-wrapper {
+            max-height: 260px;
+            overflow: auto;
+            border-radius: 6px;
+            border: 1px solid #252839;
+        }
+
+        pre.json-output {
+            background: #0b0d12;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 11px;
+            overflow: auto;
+            white-space: pre;
+            border: 1px solid #252839;
+        }
+    </style>
+</head>
+<body>
+<div class="app">
+    <header>
+        <h1>가사 JSON 생성기</h1>
+        <span class="sub">· lrclib 없을 때 쓸 자체 JSON 가사 생성 도구</span>
+    </header>
+
+    <div class="layout">
+        <!-- 왼쪽: 입력 영역 -->
+        <div class="card">
+            <div class="card-title">
+                기본 정보
+                <span class="tag">STEP 1</span>
+            </div>
+            <div class="row">
+                <div>
+                    <label for="titleInput">제목 (title)</label>
+                    <input type="text" id="titleInput" placeholder="예: 파도혁명">
+                </div>
+                <div>
+                    <label for="artistInput">가수/아티스트 (artist)</label>
+                    <input type="text" id="artistInput" placeholder="예: 음율">
+                </div>
+            </div>
+            <div class="section-gap">
+                <label for="statusInput">상태(status) <span class="small">(기본값: Hey!)</span></label>
+                <input type="text" id="statusInput" placeholder="예: Hey!" value="Hey!">
+            </div>
+
+            <hr style="border:none;border-top:1px solid #262a3a;margin:10px 0;">
+
+            <div class="card-title">
+                가사 입력
+                <span class="tag">STEP 2</span>
+            </div>
+
+            <div class="section-gap">
+                <div class="tabs">
+                    <div class="tab active" data-tab="manual">직접 입력</div>
+                    <div class="tab" data-tab="ocr">이미지 업로드(OCR)</div>
+                </div>
+            </div>
+
+            <!-- 직접 입력 -->
+            <div id="manualPane" class="section-gap">
+                <label for="manualLyrics">가사 텍스트 (한 줄당 한 줄씩)</label>
+                <textarea id="manualLyrics" placeholder="예시&#10;처음은 미약한 물결이겠지만&#10;그렇게 너의 꿈에 닿을 수 있겠지&#10;..."></textarea>
+                <div class="small">* 각 줄이 JSON의 <code>lyrics[].line</code> 하나가 됩니다. 시간은 아래 설정에 따라 자동 생성됩니다.</div>
+            </div>
+
+            <!-- OCR 입력 -->
+            <div id="ocrPane" class="section-gap hidden">
+                <label>가사 이미지 업로드</label>
+                <input type="file" id="ocrFile" accept="image/*">
+                <div class="btn-group" style="margin-top:6px;">
+                    <button class="btn" id="ocrRunBtn">OCR 실행</button>
+                    <span class="small" id="ocrStatus">이미지를 선택한 뒤 OCR 실행을 눌러주세요.</span>
+                </div>
+
+                <div class="section-gap">
+                    <label for="ocrResult">OCR 결과 텍스트 (수정 가능)</label>
+                    <textarea id="ocrResult" placeholder="OCR로 인식된 가사가 여기에 들어옵니다. 필요하면 직접 고쳐주세요."></textarea>
+                    <div class="small">* 이 텍스트를 기반으로 JSON을 만듭니다.</div>
+                </div>
+            </div>
+
+            <hr style="border:none;border-top:1px solid #262a3a;margin:10px 0;">
+
+            <div class="card-title">
+                시간 생성 옵션
+                <span class="tag">STEP 3</span>
+            </div>
+
+            <div class="row">
+                <div>
+                    <label for="startTimeSec">시작 시간(초)</label>
+                    <input type="number" id="startTimeSec" value="0" min="0">
+                    <div class="small">예: 0 → 00:00부터</div>
+                </div>
+                <div>
+                    <label for="intervalSec">줄 간격(초)</label>
+                    <input type="number" id="intervalSec" value="5" min="1">
+                    <div class="small">예: 5 → 5초 간격으로 시간 증가</div>
+                </div>
+            </div>
+
+            <div class="section-gap btn-group">
+                <button class="btn" id="buildLinesBtn">텍스트에서 라인 생성</button>
+                <span class="small">* 현재 탭(직접 입력 / OCR 결과)의 텍스트를 사용합니다.</span>
+            </div>
+
+            <div class="status-bar" id="buildStatus"></div>
+        </div>
+
+        <!-- 오른쪽: 라인 편집 & JSON -->
+        <div class="card">
+            <div class="card-title">
+                라인 편집 & JSON 출력
+                <span class="tag">STEP 4</span>
+            </div>
+
+            <div class="section-gap">
+                <label>가사 라인 목록 (시간 + 가사)</label>
+                <div class="table-wrapper">
+                    <table id="lyricsTable">
+                        <thead>
+                        <tr>
+                            <th style="width:70px;">#</th>
+                            <th style="width:80px;">시간 (mm:ss)</th>
+                            <th>가사 (line)</th>
+                            <th style="width:50px;">삭제</th>
+                        </tr>
+                        </thead>
+                        <tbody id="lyricsTbody">
+                        <!-- JS에서 추가 -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="btn-group" style="margin-top:6px;">
+                    <button class="btn secondary" id="addLineBtn">줄 추가</button>
+                    <button class="btn secondary" id="clearLinesBtn">모든 줄 삭제</button>
+                </div>
+            </div>
+
+            <hr style="border:none;border-top:1px solid #262a3a;margin:10px 0;">
+
+            <div class="card-title">
+                JSON 미리보기
+                <span class="badge">LyricsDB 형식</span>
+            </div>
+
+            <pre class="json-output" id="jsonOutput">{}</pre>
+
+            <div class="btn-group" style="margin-top:8px;">
+                <button class="btn" id="copyJsonBtn">JSON 복사</button>
+                <button class="btn secondary" id="downloadJsonBtn">JSON 파일 다운로드</button>
+                <span class="small" id="jsonStatus"></span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // === DOM 참조 ===
+    const tabManual = document.querySelector('.tab[data-tab="manual"]');
+    const tabOCR = document.querySelector('.tab[data-tab="ocr"]');
+    const manualPane = document.getElementById('manualPane');
+    const ocrPane = document.getElementById('ocrPane');
+
+    const titleInput = document.getElementById('titleInput');
+    const artistInput = document.getElementById('artistInput');
+    const statusInput = document.getElementById('statusInput');
+
+    const manualLyrics = document.getElementById('manualLyrics');
+    const ocrFile = document.getElementById('ocrFile');
+    const ocrRunBtn = document.getElementById('ocrRunBtn');
+    const ocrStatus = document.getElementById('ocrStatus');
+    const ocrResult = document.getElementById('ocrResult');
+
+    const startTimeSecInput = document.getElementById('startTimeSec');
+    const intervalSecInput = document.getElementById('intervalSec');
+    const buildLinesBtn = document.getElementById('buildLinesBtn');
+    const buildStatus = document.getElementById('buildStatus');
+
+    const lyricsTbody = document.getElementById('lyricsTbody');
+    const addLineBtn = document.getElementById('addLineBtn');
+    const clearLinesBtn = document.getElementById('clearLinesBtn');
+
+    const jsonOutput = document.getElementById('jsonOutput');
+    const copyJsonBtn = document.getElementById('copyJsonBtn');
+    const downloadJsonBtn = document.getElementById('downloadJsonBtn');
+    const jsonStatus = document.getElementById('jsonStatus');
+
+    // === 상태 ===
+    let lyricsLines = []; // [{ time: "00:00", line: "..." }]
+
+    // === 탭 전환 ===
+    function activateTab(tabName) {
+        if (tabName === 'manual') {
+            tabManual.classList.add('active');
+            tabOCR.classList.remove('active');
+            manualPane.classList.remove('hidden');
+            ocrPane.classList.add('hidden');
+        } else {
+            tabManual.classList.remove('active');
+            tabOCR.classList.add('active');
+            manualPane.classList.add('hidden');
+            ocrPane.classList.remove('hidden');
+        }
+    }
+
+    tabManual.addEventListener('click', () => activateTab('manual'));
+    tabOCR.addEventListener('click', () => activateTab('ocr'));
+
+    // === OCR 실행 ===
+    ocrRunBtn.addEventListener('click', async () => {
+        const file = ocrFile.files && ocrFile.files[0];
+        if (!file) {
+            alert('이미지 파일을 선택해주세요.');
+            return;
+        }
+
+        ocrStatus.textContent = 'OCR 실행 중... (이미지 크기에 따라 시간이 걸릴 수 있어요)';
+        ocrRunBtn.disabled = true;
+
+        try {
+            const { data } = await Tesseract.recognize(
+                file,
+                'kor+eng',               // 한국어 + 영어
+                { logger: m => console.log(m) }
+            );
+            ocrResult.value = (data && data.text) ? data.text.trim() : '';
+            ocrStatus.textContent = 'OCR 완료! 결과를 아래에서 확인 후 필요하면 수정하세요.';
+        } catch (err) {
+            console.error(err);
+            ocrStatus.textContent = 'OCR 중 오류가 발생했습니다. 콘솔을 확인하세요.';
+        } finally {
+            ocrRunBtn.disabled = false;
+        }
+    });
+
+    // === 시간 처리 유틸 ===
+    function pad2(n) {
+        return n < 10 ? '0' + n : '' + n;
+    }
+
+    function secToMMSS(sec) {
+        const s = Math.max(0, Math.round(sec));
+        const m = Math.floor(s / 60);
+        const r = s % 60;
+        return `${pad2(m)}:${pad2(r)}`;
+    }
+
+    // === 텍스트 → 라인 배열 만들기 ===
+    function buildLinesFromText(rawText) {
+        const startSec = parseInt(startTimeSecInput.value, 10) || 0;
+        const intervalSec = parseInt(intervalSecInput.value, 10) || 5;
+
+        const lines = rawText
+            .split(/\r?\n/)
+            .map(l => l.trim())
+            .filter(l => l.length > 0);
+
+        const result = [];
+        let currentTime = startSec;
+
+        for (let i = 0; i < lines.length; i++) {
+            const lineText = lines[i];
+            result.push({
+                time: secToMMSS(currentTime),
+                line: lineText
+            });
+            currentTime += intervalSec;
+        }
+        return result;
+    }
+
+    // === 테이블 렌더 ===
+    function renderLyricsTable() {
+        lyricsTbody.innerHTML = '';
+
+        if (!lyricsLines.length) {
+            const tr = document.createElement('tr');
+            const td = document.createElement('td');
+            td.colSpan = 4;
+            td.style.fontSize = '11px';
+            td.style.color = '#888';
+            td.textContent = '아직 생성된 라인이 없습니다. 텍스트에서 라인 생성 버튼을 눌러보세요.';
+            tr.appendChild(td);
+            lyricsTbody.appendChild(tr);
+            updateJsonOutput();
+            return;
+        }
+
+        lyricsLines.forEach((row, idx) => {
+            const tr = document.createElement('tr');
+
+            // 번호
+            const tdIdx = document.createElement('td');
+            tdIdx.textContent = idx + 1;
+            tdIdx.style.color = '#999';
+
+            // 시간
+            const tdTime = document.createElement('td');
+            const timeInput = document.createElement('input');
+            timeInput.type = 'text';
+            timeInput.value = row.time || '';
+            timeInput.className = 'time-input';
+            timeInput.addEventListener('input', () => {
+                lyricsLines[idx].time = timeInput.value.trim();
+                updateJsonOutput();
+            });
+            tdTime.appendChild(timeInput);
+
+            // 가사
+            const tdLine = document.createElement('td');
+            const lineInput = document.createElement('input');
+            lineInput.type = 'text';
+            lineInput.value = row.line || '';
+            lineInput.className = 'line-input';
+            lineInput.addEventListener('input', () => {
+                lyricsLines[idx].line = lineInput.value;
+                updateJsonOutput();
+            });
+            tdLine.appendChild(lineInput);
+
+            // 삭제
+            const tdDel = document.createElement('td');
+            const delBtn = document.createElement('button');
+            delBtn.textContent = 'X';
+            delBtn.className = 'btn secondary';
+            delBtn.style.padding = '4px 8px';
+            delBtn.style.fontSize = '11px';
+            delBtn.addEventListener('click', () => {
+                lyricsLines.splice(idx, 1);
+                renderLyricsTable();
+            });
+            tdDel.appendChild(delBtn);
+
+            tr.appendChild(tdIdx);
+            tr.appendChild(tdTime);
+            tr.appendChild(tdLine);
+            tr.appendChild(tdDel);
+
+            lyricsTbody.appendChild(tr);
+        });
+
+        updateJsonOutput();
+    }
+
+    // === JSON 출력 업데이트 ===
+    function buildJsonObject() {
+        const status = (statusInput.value || 'Hey!').trim();
+        const title = (titleInput.value || '').trim();
+        const artist = (artistInput.value || '').trim();
+
+        return {
+            status: status || 'Hey!',
+            title: title || '제목 없음',
+            artist: artist || '아티스트 없음',
+            lyrics: lyricsLines.map(l => ({
+                time: l.time || '00:00',
+                line: l.line || ''
+            }))
+        };
+    }
+
+    function updateJsonOutput() {
+        const obj = buildJsonObject();
+        jsonOutput.textContent = JSON.stringify(obj, null, 2);
+    }
+
+    // === 텍스트 → 라인 생성 버튼 ===
+    buildLinesBtn.addEventListener('click', () => {
+        // 현재 활성 탭의 텍스트 사용
+        const useManual = tabManual.classList.contains('active');
+        const rawText = useManual ? manualLyrics.value : ocrResult.value;
+
+        if (!rawText.trim()) {
+            alert('가사 텍스트가 비어 있습니다.');
+            return;
+        }
+
+        lyricsLines = buildLinesFromText(rawText);
+        renderLyricsTable();
+
+        buildStatus.textContent = `라인 ${lyricsLines.length}개를 생성했습니다. 필요하면 시간과 가사를 직접 수정할 수 있습니다.`;
+    });
+
+    // === 줄 추가/삭제 ===
+    addLineBtn.addEventListener('click', () => {
+        lyricsLines.push({
+            time: '00:00',
+            line: ''
+        });
+        renderLyricsTable();
+    });
+
+    clearLinesBtn.addEventListener('click', () => {
+        if (!lyricsLines.length) return;
+        if (!confirm('모든 라인을 삭제할까요?')) return;
+        lyricsLines = [];
+        renderLyricsTable();
+    });
+
+    // === JSON 복사 ===
+    copyJsonBtn.addEventListener('click', async () => {
+        try {
+            const text = jsonOutput.textContent || '';
+            await navigator.clipboard.writeText(text);
+            jsonStatus.textContent = '클립보드에 복사했습니다!';
+            setTimeout(() => jsonStatus.textContent = '', 2000);
+        } catch (e) {
+            console.error(e);
+            jsonStatus.textContent = '복사 실패 (브라우저 권한을 확인해주세요)';
+        }
+    });
+
+    // === JSON 다운로드 ===
+    downloadJsonBtn.addEventListener('click', () => {
+        const obj = buildJsonObject();
+        const jsonStr = JSON.stringify(obj, null, 2);
+
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+
+        const baseTitle = (titleInput.value || obj.title || 'lyrics').trim() || 'lyrics';
+        const safeTitle = baseTitle.replace(/[^\w가-힣-_]+/g, '_');
+        const fileName = safeTitle + '.json';
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+
+        URL.revokeObjectURL(url);
+        jsonStatus.textContent = `JSON 파일을 다운로드했습니다: ${fileName}`;
+        setTimeout(() => jsonStatus.textContent = '', 3000);
+    });
+
+    // 초기 렌더
+    renderLyricsTable();
+</script>
+</body>
+</html>
