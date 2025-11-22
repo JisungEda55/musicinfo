@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>간편 가사 검색기 (LRC LIB)</title>
     <style>
-        /* 간단한 스타일링 */
         body {
             font-family: 'Apple SD Gothic Neo', sans-serif;
             background-color: #1e1e1e;
@@ -33,7 +32,6 @@
         }
         button:hover { background-color: #0056b3; }
         
-        /* 검색 결과 리스트 스타일 */
         #result-list {
             margin-top: 20px;
             list-style: none;
@@ -52,21 +50,30 @@
         .song-title { font-weight: bold; font-size: 1.1em; }
         .song-artist { color: #aaa; font-size: 0.9em; }
 
-        /* 가사 보여주는 영역 */
         #lyrics-container {
             margin-top: 30px;
             text-align: left;
             background-color: #252525;
             padding: 20px;
             border-radius: 10px;
-            white-space: pre-wrap; /* 줄바꿈 보존 */
+            white-space: pre-wrap;
             line-height: 1.6;
-            display: none; /* 초기엔 숨김 */
+            display: none;
             border: 1px solid #444;
             max-height: 500px;
             overflow-y: auto;
         }
         .time-tag { color: #ffd700; margin-right: 10px; font-size: 0.8em; }
+
+        #control-buttons {
+            margin-top: 20px;
+            text-align: right;
+        }
+        #control-buttons button {
+            margin-left: 8px;
+            padding: 8px 14px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -74,7 +81,7 @@
     <h1>🎵 가사 검색기</h1>
     <div>
         <input type="text" id="searchInput" placeholder="노래 제목 또는 가수 입력 (예: Butter)">
-        <button onclick="searchLyrics()">검색</button>
+        <button id="searchBtn">검색</button>
     </div>
 
     <ul id="result-list"></ul>
@@ -82,8 +89,12 @@
     <div id="lyrics-container"></div>
 
     <script>
-        // LRC LIB API 엔드포인트
         const API_URL = "https://lrclib.net/api/search";
+
+        // 현재 선택된 곡 정보를 저장할 전역 변수
+        let currentSong = null;
+        // 이미 떠 있는 팝업 창을 재사용하기 위한 참조
+        let lyricsPopup = null;
 
         async function searchLyrics() {
             const query = document.getElementById('searchInput').value;
@@ -95,23 +106,21 @@
                 return;
             }
 
-            // 초기화
             resultList.innerHTML = "<p style='text-align:center; color:#888;'>검색 중...</p>";
             lyricsContainer.style.display = 'none';
 
             try {
-                // API 호출
                 const response = await fetch(`${API_URL}?q=${encodeURIComponent(query)}`);
                 const data = await response.json();
 
-                resultList.innerHTML = ""; // 로딩 문구 제거
+                resultList.innerHTML = "";
 
-                if (data.length === 0) {
+                if (!data || data.length === 0) {
                     resultList.innerHTML = "<p style='text-align:center;'>검색 결과가 없습니다.</p>";
                     return;
                 }
 
-                // 검색 결과 리스트 생성 (최대 5개만 표시)
+                // 최대 5개만 표시
                 data.slice(0, 5).forEach(song => {
                     const li = document.createElement('li');
                     li.className = 'song-item';
@@ -119,8 +128,7 @@
                         <div class="song-title">♪ ${song.trackName}</div>
                         <div class="song-artist">${song.artistName} (${song.albumName})</div>
                     `;
-                    // 클릭 이벤트: 가사 보여주기
-                    li.onclick = () => showLyrics(song);
+                    li.addEventListener('click', () => showLyrics(song));
                     resultList.appendChild(li);
                 });
 
@@ -133,31 +141,104 @@
         function showLyrics(song) {
             const lyricsContainer = document.getElementById('lyrics-container');
             const resultList = document.getElementById('result-list');
-            
-            // 목록은 숨기고 가사창 보여주기
-            resultList.innerHTML = ""; 
+
+            currentSong = song; // 팝업에서 쓰려고 저장
+
+            // 검색 결과 목록 비우고 가사 영역 표시
+            resultList.innerHTML = "";
             lyricsContainer.style.display = 'block';
 
             let content = `<h3>${song.trackName} - ${song.artistName}</h3><hr>`;
 
             if (song.syncedLyrics) {
-                // 시간 정보가 있는 가사 (LRC 포맷)
-                // 보기 좋게 시간 부분에 색상을 입힘
-                content += song.syncedLyrics.replace(/\[(\d{2}:\d{2}\.\d{2})\]/g, '<span class="time-tag">[$1]</span>');
+                // 시간을 색칠해서 보기 좋게
+                content += song.syncedLyrics.replace(
+                    /\[(\d{2}:\d{2}\.\d{2})\]/g,
+                    '<span class="time-tag">[$1]</span>'
+                );
             } else if (song.plainLyrics) {
-                // 시간 정보가 없는 일반 가사
                 content += song.plainLyrics;
             } else {
                 content += "가사 정보가 등록되지 않은 곡입니다.";
             }
 
+            // 가사 텍스트 + 버튼 영역
+            content += `
+                <div id="control-buttons">
+                    <button id="reSearchBtn" style="background:#555;">다시 검색</button>
+                    <button id="popupPlayBtn">가사 재생 (팝업)</button>
+                </div>
+            `;
+
             lyricsContainer.innerHTML = content;
-            
-            // 다시 검색 버튼 추가
-            lyricsContainer.innerHTML += `<br><br><button onclick="location.reload()" style="background:#555;">다시 검색</button>`;
+
+            // 버튼 이벤트 연결
+            document.getElementById('reSearchBtn').addEventListener('click', () => {
+                location.reload();
+            });
+
+            document.getElementById('popupPlayBtn').addEventListener('click', () => {
+                openLyricsPopup();
+            });
         }
 
-        // 엔터키 입력 시 검색 실행
+        function openLyricsPopup() {
+            if (!currentSong) {
+                alert("먼저 곡을 선택해주세요.");
+                return;
+            }
+
+            // 이미 팝업이 열려 있고 닫히지 않았다면 재사용
+            if (!lyricsPopup || lyricsPopup.closed) {
+                lyricsPopup = window.open(
+                    'lyrics-popup.html',      // 팝업에 띄울 페이지 (같은 폴더에 둔다고 가정)
+                    'lyricsPlayerWindow',
+                    'width=500,height=600'
+                );
+            } else {
+                // 포커스만 다시 주기
+                lyricsPopup.focus();
+            }
+
+            if (!lyricsPopup) {
+                alert("브라우저에서 팝업이 차단되었습니다. 팝업을 허용해주세요.");
+                return;
+            }
+
+            // 팝업이 로드된 후에 데이터 전송
+            const sendDataToPopup = () => {
+                const payload = {
+                    type: 'INIT_LYRICS',
+                    payload: {
+                        trackName: currentSong.trackName,
+                        artistName: currentSong.artistName,
+                        syncedLyrics: currentSong.syncedLyrics || null,
+                        plainLyrics: currentSong.plainLyrics || null
+                    }
+                };
+
+                // origin을 명확하게 지정 (보안상 권장)
+                const targetOrigin = window.location.origin === 'null'
+                    ? '*'   // 로컬 파일(file://) 환경이라면 어쩔 수 없이 * 사용
+                    : window.location.origin;
+
+                lyricsPopup.postMessage(payload, targetOrigin);
+            };
+
+            // 이미 다 로딩된 상태일 수도 있고, 아닐 수도 있어서 둘 다 처리
+            try {
+                // iOS/Safari 등 일부 브라우저 호환을 위해 try/catch
+                lyricsPopup.onload = () => {
+                    sendDataToPopup();
+                };
+            } catch (e) {
+                // onload 접근이 막히면 약간의 지연 후 전송 시도
+                setTimeout(sendDataToPopup, 500);
+            }
+        }
+
+        // 검색 버튼 & 엔터키
+        document.getElementById("searchBtn").addEventListener("click", searchLyrics);
         document.getElementById("searchInput").addEventListener("keypress", function(event) {
             if (event.key === "Enter") {
                 searchLyrics();
