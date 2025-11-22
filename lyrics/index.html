@@ -82,22 +82,12 @@
             transform: scale(1.02);
         }
 
-        /* === 방법 1: POP 2줄 모드 (노란/주황 따뜻한 색) === */
+        /* === 방법 1: POP 2줄 (표현 방식) === */
         #LiveArea.mode-dual .live-line {
             font-family: 'OneStoreMobilePop', 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
             font-size: 20px;
             font-weight: normal;
             color: #ffffff;
-
-            /* 따뜻한 노란/주황 테두리 */
-            -webkit-text-stroke: 1px #FFD54A;
-            text-stroke: 1px #FFD54A;
-            text-shadow:
-                -0.5px -0.5px 0 #FF9800,
-                 0.5px -0.5px 0 #FF9800,
-                -0.5px  0.5px 0 #FF9800,
-                 0.5px  0.5px 0 #FF9800,
-                 0px    0px   1px #FFE082;
             opacity: 0.7;
             transition: opacity 0.15s ease;
         }
@@ -105,23 +95,12 @@
             opacity: 1;
         }
 
-        /* === 방법 3: 부드러운 2줄 모드 (청량 파랑 + 애니메이션) === */
+        /* === 방법 3: 부드러운 2줄 (표현 방식) === */
         #LiveArea.mode-soft .live-line {
             font-family: 'OneStoreMobilePop', 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
             font-size: 20px;
             font-weight: normal;
             color: #ffffff;
-
-            /* 얇은 청량 파란 테두리 - 그대로 */
-            -webkit-text-stroke: 1px #60B5FF;
-            text-stroke: 1px #60B5FF;
-            text-shadow:
-                -0.5px -0.5px 0 #0065F8,
-                 0.5px -0.5px 0 #0065F8,
-                -0.5px  0.5px 0 #0065F8,
-                 0.5px  0.5px 0 #0065F8,
-                 0px    0px   1px #60B5FF;
-
             opacity: 0.7;
             transition: transform 0.25s ease, opacity 0.25s ease;
         }
@@ -142,7 +121,33 @@
             transform: translateY(12px);
         }
 
-        /* === 방법 2: 방송형 1줄 모드 (LineSeed 700) === */
+        /* === 색상 테마: 따뜻한 옐로우 (기존 방법1 색) === */
+        #LiveArea.theme-warm.mode-dual .live-line,
+        #LiveArea.theme-warm.mode-soft .live-line {
+            -webkit-text-stroke: 1px #FFD54A;
+            text-stroke: 1px #FFD54A;
+            text-shadow:
+                -0.5px -0.5px 0 #FF9800,
+                 0.5px -0.5px 0 #FF9800,
+                -0.5px  0.5px 0 #FF9800,
+                 0.5px  0.5px 0 #FF9800,
+                 0px    0px   1px #FFE082;
+        }
+
+        /* === 색상 테마: 청량 블루 (기존 방법3 색) === */
+        #LiveArea.theme-cool.mode-dual .live-line,
+        #LiveArea.theme-cool.mode-soft .live-line {
+            -webkit-text-stroke: 1px #60B5FF;
+            text-stroke: 1px #60B5FF;
+            text-shadow:
+                -0.5px -0.5px 0 #0065F8,
+                 0.5px -0.5px 0 #0065F8,
+                -0.5px  0.5px 0 #0065F8,
+                 0.5px  0.5px 0 #0065F8,
+                 0px    0px   1px #60B5FF;
+        }
+
+        /* === 방법 2: 방송형 1줄 모드 (LineSeed 700, 색상 테마 영향 없음) === */
         #LiveArea.mode-single .live-line {
             font-family: 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
             font-weight: 700;
@@ -217,6 +222,38 @@
             align-items: center;
             gap: 4px;
             cursor: pointer;
+        }
+
+        /* 색상 테마 선택 */
+        #color-theme-controls {
+            margin-top: 4px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #ccc;
+        }
+
+        #color-theme-controls label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
+        }
+
+        /* 색상 미리보기 작은 박스 */
+        .color-chip {
+            width: 14px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        .chip-warm {
+            background: linear-gradient(135deg, #FFD54A, #FF9800);
+        }
+        .chip-cool {
+            background: linear-gradient(135deg, #60B5FF, #0065F8);
         }
 
         #search-area {
@@ -318,7 +355,8 @@
 <div class="app">
     <!-- 위 : LiveArea -->
     <section id="LiveAreaShell">
-        <div id="LiveArea" class="mode-dual">
+        <!-- 기본: 방법1(POP 2줄) + 따뜻한 옐로 테마 -->
+        <div id="LiveArea" class="mode-dual theme-warm">
             <div class="live-line current" id="live-current">아직 재생 중인 가사가 없습니다.</div>
             <div class="live-line" id="live-next"></div>
         </div>
@@ -352,6 +390,21 @@
             </label>
         </div>
 
+        <!-- 색상 테마 선택 -->
+        <div id="color-theme-controls">
+            <span>테마 색상:</span>
+            <label>
+                <input type="radio" name="colorTheme" value="warm" checked>
+                <span class="color-chip chip-warm"></span>
+                따뜻한 옐로
+            </label>
+            <label>
+                <input type="radio" name="colorTheme" value="cool">
+                <span class="color-chip chip-cool"></span>
+                청량 블루
+            </label>
+        </div>
+
         <div id="search-area">
             <input type="text" id="searchInput" placeholder="노래 제목 또는 가수 입력 (예: Butter, IU, 파도혁명)">
             <button id="searchBtn">검색</button>
@@ -381,6 +434,7 @@
     let isPlaying     = false;
     let clearTimerId  = null;     // 곡 끝난 뒤 LiveArea 비우기
     let viewMode      = 'dual';   // 'dual' | 'single' | 'soft'
+    let colorTheme    = 'warm';   // 'warm' | 'cool'
     let playhead      = 0;        // 일시정지/재개용 진행 시간
     let countdownId   = null;     // 3-2-1 카운트다운용
     let softAnimId    = null;     // 부드러운 2줄 애니메이션용
@@ -411,11 +465,16 @@
             .trim();
     }
 
-    /* ===== LiveArea 모드 토글 ===== */
+    /* ===== LiveArea 모드/테마 토글 ===== */
     function updateLiveAreaMode() {
         LiveAreaEl.classList.toggle('mode-dual',  viewMode === 'dual');
         LiveAreaEl.classList.toggle('mode-single',viewMode === 'single');
         LiveAreaEl.classList.toggle('mode-soft',  viewMode === 'soft');
+    }
+
+    function updateLiveAreaTheme() {
+        LiveAreaEl.classList.toggle('theme-warm', colorTheme === 'warm');
+        LiveAreaEl.classList.toggle('theme-cool', colorTheme === 'cool');
     }
 
     document.querySelectorAll('input[name="viewMode"]').forEach(radio => {
@@ -424,7 +483,16 @@
             updateLiveAreaMode();
         });
     });
+
+    document.querySelectorAll('input[name="colorTheme"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            colorTheme = e.target.value;
+            updateLiveAreaTheme();
+        });
+    });
+
     updateLiveAreaMode();
+    updateLiveAreaTheme();
 
     /* =========================
        0. 로컬 DB 관련 함수
