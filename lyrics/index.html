@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Lyrics LiveArea Player</title>
     <style>
-        /* LineSeed Regular 400 : 기본 영역 */
+        /* LineSeed Regular 400 : 기본 영역 & 방송형 1줄 모드 */
         @font-face {
             font-family: 'LineSeed';
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Rg.woff2') format('woff2');
@@ -13,7 +13,7 @@
             font-display: swap;
         }
 
-        /* LineSeed Bold 700 : 제목/컨트롤 등 굵은 텍스트 */
+        /* LineSeed Bold 700 : 제목/컨트롤 등 */
         @font-face {
             font-family: 'LineSeed';
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_11-01@1.0/LINESeedKR-Bd.woff2') format('woff2');
@@ -21,7 +21,7 @@
             font-display: swap;
         }
 
-        /* LiveArea용 폰트 */
+        /* LiveArea용 POP 폰트 (방법 1) */
         @font-face {
             font-family: 'OneStoreMobilePop';
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2105_2@1.0/ONE-Mobile-POP.woff') format('woff');
@@ -47,15 +47,13 @@
             flex-direction: column;
         }
 
-        /* =======================
-           LiveArea (위, 가사만)
-           ======================= */
+        /* ========== LiveArea (위, 가사만) ========== */
         #LiveAreaShell {
-            flex: 0 0 35vh; /* 높이 비율 (원하면 조절) */
+            flex: 0 0 35vh; /* 높이 비율 */
             display: flex;
             align-items: center;
             justify-content: center;
-            background: transparent; /* 전체 영역도 투명 */
+            background: transparent;
             padding: 8px;
         }
 
@@ -72,19 +70,24 @@
 
         #LiveArea .live-line {
             min-height: 1.6em;
-            font-size: 20px;
-            opacity: 0.6;
             white-space: pre-wrap;
+            opacity: 0.6;
+            transition: opacity 0.15s, transform 0.15s;
+        }
 
-            /* LiveArea 전용 폰트 */
+        #LiveArea .live-line.current {
+            opacity: 1;
+            transform: scale(1.02);
+        }
+
+        /* === 방법 1: POP 2줄 모드 (기본) === */
+        #LiveArea.mode-dual .live-line {
             font-family: 'OneStoreMobilePop', 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            font-size: 20px;
             font-weight: normal;
-
-            /* 흰색 + 얇은 빨간 테두리 */
             color: #ffffff;
             -webkit-text-stroke: 1px #fc3c1c;
             text-stroke: 1px #fc3c1c;
-
             text-shadow:
                 -0.5px -0.5px 0 #fc3c1c,
                  0.5px -0.5px 0 #fc3c1c,
@@ -93,14 +96,23 @@
                  0px    0px   1px #fc3c1c;
         }
 
-        #LiveArea .live-line.current {
-            opacity: 1;
-            transform: scale(1.02);
+        /* === 방법 2: 방송형 1줄 모드 === */
+        #LiveArea.mode-single .live-line {
+            font-family: 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            font-weight: 400;
+            font-size: 24px;
+            color: #ffffff;
+            -webkit-text-stroke: 0;
+            text-stroke: 0;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.6); /* 살짝만 */
         }
 
-        /* =======================
-           WorkingArea (아래, 나머지)
-           ======================= */
+        /* 1줄 모드에서는 다음 줄 숨김 */
+        #LiveArea.mode-single #live-next {
+            display: none;
+        }
+
+        /* ========== WorkingArea (아래, 나머지) ========== */
         #WorkingArea {
             flex: 1 1 auto;
             padding: 16px;
@@ -137,11 +149,26 @@
             font-family: 'LineSeed', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
             font-weight: 400;
         }
-
         button:hover { background-color: #0056b3; }
         button:disabled {
             background-color: #555;
             cursor: default;
+        }
+
+        /* 표시 방식 선택 영역 */
+        #view-mode-controls {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: #ccc;
+        }
+        #view-mode-controls label {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            cursor: pointer;
         }
 
         #search-area {
@@ -178,14 +205,12 @@
             cursor: pointer;
             transition: background 0.15s;
         }
-
         .song-item:hover { background-color: #2a2a2a; }
 
         .song-title {
             font-size: 14px;
             font-weight: 400;
         }
-
         .song-artist {
             font-size: 12px;
             color: #aaa;
@@ -200,14 +225,12 @@
             white-space: pre-wrap;
             line-height: 1.5;
         }
-
         #lyrics-detail h3 {
             margin-top: 0;
             margin-bottom: 6px;
             font-size: 15px;
             font-weight: 400;
         }
-
         #lyrics-detail hr {
             border: none;
             border-top: 1px solid #333;
@@ -245,15 +268,15 @@
 </head>
 <body>
 <div class="app">
-    <!-- 위: LiveArea (가사만 2줄) -->
+    <!-- 위 : LiveArea -->
     <section id="LiveAreaShell">
-        <div id="LiveArea">
+        <div id="LiveArea" class="mode-dual"><!-- 기본: 방법1 -->
             <div class="live-line current" id="live-current">아직 재생 중인 가사가 없습니다.</div>
             <div class="live-line" id="live-next"></div>
         </div>
     </section>
 
-    <!-- 아래: WorkingArea (제목/버튼/검색/가사 상세 등 전부) -->
+    <!-- 아래 : WorkingArea -->
     <section id="WorkingArea">
         <div id="now-playing">지금 선택된 곡이 없습니다.</div>
         <div id="play-status">아래에서 곡을 선택하고 <b>"가사 재생"</b>을 눌러주세요.</div>
@@ -262,6 +285,19 @@
             <button id="btn-start" disabled>재생</button>
             <button id="btn-stop" disabled>정지</button>
             <button id="btn-reset" disabled>처음으로</button>
+        </div>
+
+        <!-- 표시 방식 선택 -->
+        <div id="view-mode-controls">
+            <span>표시 방식:</span>
+            <label>
+                <input type="radio" name="viewMode" value="dual" checked>
+                POP 2줄 (방법 1)
+            </label>
+            <label>
+                <input type="radio" name="viewMode" value="single">
+                방송형 1줄 (방법 2)
+            </label>
         </div>
 
         <div id="search-area">
@@ -280,7 +316,7 @@
 <script>
     const API_URL = "https://lrclib.net/api/search";
 
-    // 재생 상태
+    // 상태
     let currentSong   = null;
     let syncedLines   = [];   // [{ time, text }]
     let timerId       = null;
@@ -288,8 +324,11 @@
     let currentIndex  = -1;
     let lastTime      = 0;
     let isPlaying     = false;
+    let clearTimerId  = null;   // 끝난 후 LiveArea 비우기용
+    let viewMode      = 'dual'; // 'dual' | 'single'
 
-    // DOM 참조
+    // DOM
+    const LiveAreaEl     = document.getElementById('LiveArea');
     const nowPlayingEl   = document.getElementById('now-playing');
     const playStatusEl   = document.getElementById('play-status');
     const liveCurrentEl  = document.getElementById('live-current');
@@ -302,6 +341,20 @@
     const searchBtn      = document.getElementById('searchBtn');
     const resultList     = document.getElementById('result-list');
     const lyricsDetailEl = document.getElementById('lyrics-detail');
+
+    /* ===== LiveArea 모드 토글 ===== */
+    function updateLiveAreaMode() {
+        LiveAreaEl.classList.toggle('mode-dual', viewMode === 'dual');
+        LiveAreaEl.classList.toggle('mode-single', viewMode === 'single');
+    }
+
+    document.querySelectorAll('input[name="viewMode"]').forEach(radio => {
+        radio.addEventListener('change', (e) => {
+            viewMode = e.target.value;
+            updateLiveAreaMode();
+        });
+    });
+    updateLiveAreaMode();
 
     /* =========================
        1. 검색
@@ -416,7 +469,7 @@
         return result;
     }
 
-    // LiveArea: 현재 줄 + 다음 줄만 표시
+    // LiveArea: 현재 줄 + 다음 줄
     function showLiveLines(activeIndex) {
         if (!syncedLines.length) {
             liveCurrentEl.textContent = "재생할 가사가 없습니다.";
@@ -440,6 +493,11 @@
         liveNextEl.textContent = nextText || "";
     }
 
+    function clearLiveArea() {
+        liveCurrentEl.textContent = "";
+        liveNextEl.textContent = "";
+    }
+
     function preparePlaybackFromSong(song, autoStart = false) {
         if (!song) return;
 
@@ -451,6 +509,10 @@
         if (timerId) {
             cancelAnimationFrame(timerId);
             timerId = null;
+        }
+        if (clearTimerId) {
+            clearTimeout(clearTimerId);
+            clearTimerId = null;
         }
 
         const title  = song.trackName || '제목 없음';
@@ -467,7 +529,7 @@
             }
         }
 
-        // 싱크 없으면 plainLyrics를 2초 간격으로 유사 싱크
+        // 싱크 없는 경우 plainLyrics를 2초 간격으로 유사 싱크
         if (!hasSynced && song.plainLyrics) {
             const plainLines = song.plainLyrics
                 .split(/\r?\n/)
@@ -518,6 +580,10 @@
             cancelAnimationFrame(timerId);
             timerId = null;
         }
+        if (clearTimerId) {
+            clearTimeout(clearTimerId);
+            clearTimerId = null;
+        }
 
         isPlaying = true;
         currentIndex = -1;
@@ -548,10 +614,19 @@
             if (elapsed <= lastTime + 3) {
                 timerId = requestAnimationFrame(step);
             } else {
+                // 곡이 자연스럽게 끝난 경우
                 isPlaying = false;
                 btnStart.disabled = false;
                 btnStop.disabled  = true;
                 playStatusEl.textContent = '재생이 끝났습니다.';
+                timerId = null;
+
+                // 6초 뒤 LiveArea 비우기 (그 사이에 다시 재생되면 취소)
+                clearTimerId = setTimeout(() => {
+                    if (!isPlaying) {
+                        clearLiveArea();
+                    }
+                }, 6000);
             }
         };
 
@@ -562,6 +637,10 @@
         if (timerId) {
             cancelAnimationFrame(timerId);
             timerId = null;
+        }
+        if (clearTimerId) {
+            clearTimeout(clearTimerId);
+            clearTimerId = null;
         }
         isPlaying = false;
         btnStart.disabled = !syncedLines.length;
