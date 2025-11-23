@@ -1,25 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <title>Versatile Text Animation System – 2D & 3D</title>
+  <title>Nintendo Style 3D Text Popup</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    :root {
-      --bg: #050611;
-      --bg-elevated: rgba(15, 18, 40, 0.9);
-      --accent: #6c5ce7;
-      --accent-soft: rgba(108, 92, 231, 0.35);
-      --accent-2: #00d2ff;
-      --accent-3: #ff6bcb;
-      --text: #f8f8ff;
-      --muted: #9aa0c2;
-      --radius-lg: 18px;
-      --radius-md: 10px;
-      --shadow-soft: 0 18px 60px rgba(0, 0, 0, 0.55);
-      --transition-fast: 0.16s ease-out;
-    }
-
     * {
       box-sizing: border-box;
       margin: 0;
@@ -27,374 +12,58 @@
     }
 
     html, body {
-      height: 100%;
       width: 100%;
+      height: 100%;
       overflow: hidden;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-        "Segoe UI", sans-serif;
-      color: var(--text);
-      background: radial-gradient(circle at top, #11143a 0, #050611 45%, #020209 100%);
-    }
-
-    body::before {
-      /* subtle animated gradient bloom */
-      content: "";
-      position: fixed;
-      inset: -40%;
-      background:
-        radial-gradient(circle at 0% 0%, rgba(255, 255, 255, 0.065), transparent 55%),
-        radial-gradient(circle at 100% 0%, rgba(0, 210, 255, 0.16), transparent 55%),
-        radial-gradient(circle at 100% 100%, rgba(255, 107, 203, 0.16), transparent 55%);
-      filter: blur(4px);
-      opacity: 0.8;
-      pointer-events: none;
-      z-index: -2;
-      animation: bg-ambient 18s linear infinite alternate;
-    }
-
-    @keyframes bg-ambient {
-      0% { transform: translate3d(-20px, -10px, 0) scale(1.02); }
-      50% { transform: translate3d(30px, 20px, 0) scale(1.04); }
-      100% { transform: translate3d(-10px, 40px, 0) scale(1.01); }
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      background: radial-gradient(circle at top, #1c2b63 0, #050717 40%, #02020a 100%);
+      color: #fdfdfd;
     }
 
     .app {
-      position: relative;
-      z-index: 1;
-      height: 100%;
-      width: 100%;
-      padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      height: 100vh;
+      width: 100vw;
     }
 
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 18px;
-      background: linear-gradient(120deg, rgba(10, 12, 28, 0.9), rgba(20, 15, 40, 0.9));
-      border-radius: var(--radius-lg);
-      border: 1px solid rgba(255, 255, 255, 0.04);
-      box-shadow: var(--shadow-soft);
-      backdrop-filter: blur(18px);
-    }
-
-    header .title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    header .title-logo {
-      width: 30px;
-      height: 30px;
-      border-radius: 11px;
-      background:
-        radial-gradient(circle at 10% 0%, #ffffff 0, #6c5ce7 40%, #ff6bcb 80%);
-      box-shadow:
-        0 0 25px rgba(108, 92, 231, 0.7),
-        0 0 40px rgba(0, 210, 255, 0.55);
+    /* 위/아래 2분할 레이아웃 */
+    .top {
+      flex: 3;
       position: relative;
-      overflow: hidden;
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      padding: 8px 8px 4px;
     }
 
-    header .title-logo::after {
-      content: "";
-      position: absolute;
-      inset: 30% 10%;
-      border-radius: 999px;
-      border: 2px solid rgba(255, 255, 255, 0.9);
-      transform: rotate(-18deg);
-    }
-
-    header h1 {
-      font-size: 1rem;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    header h1 span {
-      color: var(--accent-2);
-    }
-
-    header .subtitle {
-      font-size: 0.76rem;
-      color: rgba(204, 210, 250, 0.8);
-    }
-
-    header .chip {
-      padding: 5px 10px;
-      border-radius: 999px;
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      background: radial-gradient(circle at 0 0, rgba(0, 210, 255, 0.35), transparent 60%);
-      border: 1px solid rgba(0, 210, 255, 0.55);
-      color: #dff9ff;
-      box-shadow: 0 0 16px rgba(0, 210, 255, 0.4);
-    }
-
-    main {
-      flex: 1;
-      display: grid;
-      grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
-      gap: 12px;
-      min-height: 0;
-    }
-
-    .panel {
-      position: relative;
-      background: radial-gradient(circle at top left, rgba(108, 92, 231, 0.17), transparent 55%),
-        radial-gradient(circle at bottom right, rgba(0, 210, 255, 0.12), transparent 55%),
-        linear-gradient(145deg, rgba(3, 3, 10, 0.9), rgba(12, 16, 35, 0.92));
-      border-radius: var(--radius-lg);
-      border: 1px solid rgba(255, 255, 255, 0.03);
-      box-shadow: var(--shadow-soft);
-      padding: 14px;
-      overflow: hidden;
-      backdrop-filter: blur(22px);
-    }
-
-    .panel::before {
-      content: "";
-      position: absolute;
-      inset: -1px;
-      border-radius: inherit;
-      background:
-        linear-gradient(130deg,
-          rgba(255, 255, 255, 0.18),
-          rgba(255, 255, 255, 0.02),
-          rgba(108, 92, 231, 0.6),
-          rgba(0, 210, 255, 0.5),
-          rgba(255, 255, 255, 0.06));
-      opacity: 0;
-      mix-blend-mode: screen;
-      pointer-events: none;
-      transition: opacity 0.8s ease-out;
-    }
-
-    .panel:hover::before {
-      opacity: 0.32;
-    }
-
-    .panel-left {
-      display: grid;
-      grid-template-rows: minmax(0, 1.5fr) minmax(0, 1fr);
-      gap: 10px;
-    }
-
-    .panel-right {
+    .bottom {
+      flex: 2;
+      padding: 10px 16px 16px;
       display: flex;
       flex-direction: column;
       gap: 8px;
-    }
-
-    /* --- 2D text area --- */
-    .text2d-wrapper {
-      position: relative;
-      border-radius: var(--radius-md);
-      border: 1px solid rgba(255, 255, 255, 0.08);
       background:
-        radial-gradient(circle at top left, rgba(108, 92, 231, 0.23), transparent 60%),
-        linear-gradient(145deg, rgba(5, 7, 20, 0.9), rgba(9, 11, 30, 0.9));
-      padding: 16px 18px;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.1), transparent 50%),
+        linear-gradient(180deg, rgba(5, 7, 22, 0.95), rgba(3, 5, 18, 0.96));
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      box-shadow: 0 -12px 30px rgba(0, 0, 0, 0.75);
+    }
+
+    /* 상단 캔버스 박스 */
+    .stage {
+      position: relative;
+      flex: 1;
+      border-radius: 18px;
       overflow: hidden;
-    }
-
-    .text2d-label {
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-      color: rgba(192, 199, 249, 0.78);
-      opacity: 0.9;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .tag-pill {
-      font-size: 0.65rem;
-      padding: 3px 7px;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      background: rgba(9, 12, 30, 0.9);
-      color: rgba(222, 228, 255, 0.9);
-    }
-
-    .text-display {
-      position: relative;
-      font-size: 2.3rem;
-      font-weight: 700;
-      letter-spacing: 0.04em;
-      color: #ffffff;
-      text-shadow:
-        0 0 22px rgba(0, 210, 255, 0.5),
-        0 0 45px rgba(108, 92, 231, 0.7);
-      white-space: pre;
-      min-height: 3.6em;
-      display: flex;
-      align-items: center;
-      justify-content: flex-start;
-      overflow: hidden;
-      --glow-color: rgba(0, 210, 255, 0.8);
-    }
-
-    .text-display span.wave-letter {
-      display: inline-block;
-      animation: wave 0.9s ease-in-out infinite;
-      animation-delay: calc(var(--i) * 80ms);
-      transform-origin: bottom center;
-    }
-
-    @keyframes wave {
-      0%, 100% { transform: translateY(0); }
-      40% { transform: translateY(-0.24em); }
-    }
-
-    .text-display.glow {
-      animation: glow-loop 2.6s ease-in-out infinite;
-    }
-
-    @keyframes glow-loop {
-      0%, 100% {
-        text-shadow:
-          0 0 6px rgba(0, 210, 255, 0.2),
-          0 0 24px rgba(108, 92, 231, 0.45),
-          0 0 60px rgba(0, 210, 255, 0.25);
-      }
-      40% {
-        text-shadow:
-          0 0 10px rgba(0, 210, 255, 0.9),
-          0 0 36px rgba(108, 92, 231, 0.9),
-          0 0 76px rgba(255, 107, 203, 0.8);
-      }
-    }
-
-    /* glitch effect */
-    .text-display.glitch {
-      position: relative;
-      color: #fff;
-      text-shadow: 0 0 3px rgba(255, 255, 255, 0.8);
-    }
-
-    .text-display.glitch::before,
-    .text-display.glitch::after {
-      content: attr(data-text);
-      position: absolute;
-      inset: 0;
-      mix-blend-mode: screen;
-      clip-path: inset(0 0 0 0);
-      opacity: 0.85;
-    }
-
-    .text-display.glitch::before {
-      left: -1px;
-      text-shadow: -2px 0 #00d2ff;
-      animation: glitch-shift-1 1.6s infinite linear alternate-reverse;
-    }
-
-    .text-display.glitch::after {
-      left: 1px;
-      text-shadow: 2px 0 #ff6bcb;
-      animation: glitch-shift-2 1.2s infinite linear alternate-reverse;
-    }
-
-    @keyframes glitch-shift-1 {
-      0% { clip-path: inset(0 0 85% 0); transform: translate(-0.5px, -0.5px); }
-      20% { clip-path: inset(15% 0 50% 0); transform: translate(-1px, 0.5px); }
-      40% { clip-path: inset(40% 0 20% 0); transform: translate(1px, 1px); }
-      60% { clip-path: inset(60% 0 30% 0); transform: translate(0.5px, -1px); }
-      80% { clip-path: inset(85% 0 5% 0); transform: translate(-1px, 0); }
-      100% { clip-path: inset(0 0 0 0); transform: translate(0, 0); }
-    }
-
-    @keyframes glitch-shift-2 {
-      0% { clip-path: inset(80% 0 0 0); transform: translate(0.5px, 0.5px); }
-      25% { clip-path: inset(50% 0 20% 0); transform: translate(1px, -0.5px); }
-      50% { clip-path: inset(30% 0 45% 0); transform: translate(-1px, -1px); }
-      75% { clip-path: inset(15% 0 70% 0); transform: translate(-0.5px, 1px); }
-      100% { clip-path: inset(0 0 0 0); transform: translate(0, 0); }
-    }
-
-    /* rainbow gradient fill */
-    .text-display.rainbow {
-      background: linear-gradient(
-        120deg,
-        #ff6bcb,
-        #ffc46b,
-        #6bffb2,
-        #00d2ff,
-        #6c5ce7,
-        #ff6bcb
-      );
-      background-size: 300% 300%;
-      animation: rainbow-shift 6s ease-in-out infinite;
-      -webkit-background-clip: text;
-      background-clip: text;
-      color: transparent;
-      text-shadow: none;
-    }
-
-    @keyframes rainbow-shift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
-    }
-
-    /* typing caret */
-    .caret {
-      display: inline-block;
-      width: 0.06em;
-      margin-left: 0.06em;
-      height: 1.1em;
-      vertical-align: baseline;
-      background: rgba(255, 255, 255, 0.85);
-      box-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
-      animation: caret-blink 0.9s step-end infinite;
-    }
-
-    @keyframes caret-blink {
-      0%, 65% { opacity: 1; }
-      66%, 100% { opacity: 0; }
-    }
-
-    /* --- 3D canvas --- */
-    .canvas3d-wrapper {
-      position: relative;
-      border-radius: var(--radius-md);
-      border: 1px solid rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.1);
       background:
-        radial-gradient(circle at top, rgba(0, 210, 255, 0.16), transparent 55%),
-        radial-gradient(circle at bottom, rgba(255, 107, 203, 0.13), transparent 55%),
-        #02030a;
-      overflow: hidden;
-    }
-
-    .canvas3d-header {
-      position: absolute;
-      top: 8px;
-      left: 10px;
-      font-size: 0.7rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: rgba(187, 194, 246, 0.75);
-      z-index: 1;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .canvas3d-header span.dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 999px;
-      background: radial-gradient(circle, #0aff9d 0, transparent 60%);
-      box-shadow: 0 0 12px rgba(10, 255, 157, 0.8);
+        radial-gradient(circle at top, rgba(255, 255, 255, 0.15), transparent 55%),
+        radial-gradient(circle at bottom, rgba(255, 186, 120, 0.15), transparent 60%),
+        linear-gradient(145deg, #050615, #060b23);
+      box-shadow:
+        0 18px 45px rgba(0, 0, 0, 0.9),
+        0 0 40px rgba(0, 0, 0, 0.8);
     }
 
     #threeCanvas {
@@ -403,450 +72,182 @@
       display: block;
     }
 
-    /* --- Controls --- */
-    .controls-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 2px;
-    }
-
-    .controls-header h2 {
-      font-size: 0.82rem;
-      text-transform: uppercase;
-      letter-spacing: 0.18em;
-      color: rgba(187, 194, 246, 0.9);
-    }
-
-    .controls-section {
-      border-radius: var(--radius-md);
-      padding: 10px 11px;
-      background:
-        radial-gradient(circle at top left, rgba(108, 92, 231, 0.26), transparent 60%),
-        linear-gradient(150deg, rgba(7, 8, 24, 0.96), rgba(8, 10, 24, 0.96));
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      margin-bottom: 7px;
-    }
-
-    .controls-section-title {
-      font-size: 0.74rem;
-      text-transform: uppercase;
-      letter-spacing: 0.16em;
-      color: rgba(160, 169, 238, 0.94);
-      margin-bottom: 6px;
-    }
-
-    .field-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 6px;
-    }
-
-    .field {
-      flex: 1;
-      min-width: 90px;
-    }
-
-    .field-wide {
-      width: 100%;
-    }
-
-    .field label {
-      display: block;
-      font-size: 0.7rem;
-      color: rgba(180, 191, 246, 0.9);
-      margin-bottom: 3px;
-    }
-
-    textarea,
-    select,
-    input[type="text"],
-    input[type="range"] {
-      width: 100%;
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      background: rgba(4, 6, 20, 0.94);
-      color: var(--text);
-      font-size: 0.75rem;
-      padding: 6px 9px;
-      outline: none;
-      transition: border-color var(--transition-fast),
-        box-shadow var(--transition-fast),
-        background var(--transition-fast),
-        transform 0.12s ease-out;
-    }
-
-    textarea {
-      resize: vertical;
-      border-radius: 10px;
-      min-height: 66px;
-      font-family: inherit;
-    }
-
-    textarea:focus,
-    select:focus,
-    input[type="text"]:focus,
-    input[type="range"]:focus {
-      border-color: var(--accent-2);
-      box-shadow: 0 0 0 1px rgba(0, 210, 255, 0.5);
-      background: rgba(5, 7, 26, 0.96);
-      transform: translateY(-0.5px);
-    }
-
-    select {
-      appearance: none;
-      background-image:
-        linear-gradient(45deg, transparent 50%, rgba(188, 198, 255, 0.95) 50%),
-        linear-gradient(135deg, rgba(188, 198, 255, 0.95) 50%, transparent 50%);
-      background-position:
-        calc(100% - 8px) 9px,
-        calc(100% - 4px) 9px;
-      background-size: 4px 4px, 4px 4px;
-      background-repeat: no-repeat;
-      padding-right: 18px;
-    }
-
-    input[type="range"] {
-      -webkit-appearance: none;
-      height: 4px;
-      border-radius: 999px;
-      background: rgba(92, 98, 160, 0.6);
-      padding: 0;
-    }
-
-    input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background: radial-gradient(circle, #ffffff 0, #00d2ff 45%, #6c5ce7 80%);
-      box-shadow:
-        0 0 0 3px rgba(4, 8, 24, 1),
-        0 0 10px rgba(0, 210, 255, 0.7);
-      cursor: pointer;
-    }
-
-    .color-input {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .color-input input[type="color"] {
-      -webkit-appearance: none;
-      border: none;
-      padding: 0;
-      margin: 0;
-      width: 26px;
-      height: 26px;
-      border-radius: 999px;
-      overflow: hidden;
-      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4),
-        0 0 10px rgba(0, 210, 255, 0.5);
-      background: transparent;
-      cursor: pointer;
-    }
-
-    .color-input input[type="color"]::-webkit-color-swatch-wrapper {
-      padding: 0;
-    }
-
-    .color-input input[type="color"]::-webkit-color-swatch {
-      border: none;
-      border-radius: 999px;
-    }
-
-    .inline-toggle {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.72rem;
-      color: rgba(181, 191, 243, 0.9);
-    }
-
-    .inline-toggle input[type="checkbox"] {
-      appearance: none;
-      width: 28px;
-      height: 16px;
-      border-radius: 999px;
-      background: rgba(75, 85, 140, 0.8);
-      position: relative;
-      outline: none;
-      cursor: pointer;
-      transition: background 0.16s ease-out;
-    }
-
-    .inline-toggle input[type="checkbox"]::before {
-      content: "";
+    .hud {
       position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 12px;
-      height: 12px;
-      border-radius: 999px;
-      background: #ffffff;
-      box-shadow: 0 0 6px rgba(0, 0, 0, 0.5);
-      transition: transform 0.16s ease-out;
-    }
-
-    .inline-toggle input[type="checkbox"]:checked {
-      background: linear-gradient(135deg, #00d2ff, #6c5ce7);
-    }
-
-    .inline-toggle input[type="checkbox"]:checked::before {
-      transform: translateX(12px);
-    }
-
-    .buttons-row {
+      left: 14px;
+      top: 12px;
       display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 2px;
+      flex-direction: column;
+      gap: 4px;
+      z-index: 2;
+      pointer-events: none;
     }
 
-    .btn {
-      border-radius: 999px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      padding: 7px 10px;
-      font-size: 0.72rem;
+    .hud-title {
+      font-size: 0.78rem;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      letter-spacing: 0.14em;
-      background: rgba(6, 10, 28, 0.96);
-      color: rgba(220, 225, 255, 0.96);
-      cursor: pointer;
+      color: rgba(237, 245, 255, 0.88);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+    }
+
+    .hud-chip {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      transition: transform 0.14s ease-out,
-        box-shadow 0.16s ease-out,
-        background 0.16s ease-out,
-        border-color 0.16s ease-out;
-    }
-
-    .btn-primary {
-      background: radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.4), transparent 55%),
-        linear-gradient(125deg, #00d2ff, #6c5ce7);
-      color: #050616;
+      font-size: 0.7rem;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: radial-gradient(circle at 0 0, rgba(255, 255, 255, 0.6), transparent 60%),
+                  linear-gradient(145deg, #ffcf3a, #ff6b2e);
+      color: #3a1500;
       box-shadow:
-        0 10px 25px rgba(108, 92, 231, 0.7),
-        0 0 18px rgba(0, 210, 255, 0.6);
-      border-color: rgba(255, 255, 255, 0.2);
+        0 0 16px rgba(255, 179, 71, 0.7),
+        0 5px 15px rgba(0, 0, 0, 0.8);
     }
 
-    .btn-ghost {
-      background: transparent;
-      border-style: dashed;
-      border-color: rgba(173, 184, 250, 0.6);
-      color: rgba(195, 204, 255, 0.92);
+    .hud-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: radial-gradient(circle, #ffffff 0, #ff1f4a 40%, #9d0505 80%);
+      box-shadow: 0 0 10px rgba(255, 50, 80, 0.9);
     }
 
-    .btn-icon {
+    .bottom-title {
       font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: rgba(240, 244, 255, 0.9);
     }
 
-    .btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 8px 22px rgba(0, 0, 0, 0.65);
+    .bottom-sub {
+      font-size: 0.8rem;
+      color: rgba(198, 207, 255, 0.9);
+      line-height: 1.5;
     }
 
-    .hint {
-      font-size: 0.68rem;
-      color: rgba(168, 178, 235, 0.85);
-      margin-top: 3px;
-      line-height: 1.3;
+    .hint-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 6px;
+      font-size: 0.8rem;
+      color: rgba(180, 192, 255, 0.9);
     }
 
-    .hint code {
-      background: rgba(5, 8, 24, 0.96);
-      padding: 1px 4px;
+    .pill {
+      border-radius: 999px;
+      padding: 4px 9px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(8, 10, 32, 0.85);
+    }
+
+    .hint-key {
+      display: inline-block;
+      padding: 2px 6px;
       border-radius: 4px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      font-size: 0.65rem;
+      border: 1px solid rgba(255, 255, 255, 0.35);
+      background: rgba(6, 7, 22, 0.9);
+      font-size: 0.75rem;
     }
 
-    footer {
-      font-size: 0.65rem;
-      color: rgba(170, 178, 235, 0.85);
-      text-align: right;
-      opacity: 0.82;
-    }
-
-    footer span {
+    .footer {
+      margin-top: auto;
+      font-size: 0.72rem;
+      color: rgba(154, 164, 220, 0.9);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       opacity: 0.9;
     }
 
-    @media (max-width: 900px) {
-      main {
-        grid-template-columns: minmax(0, 1fr);
-        grid-template-rows: minmax(0, 1.2fr) auto;
+    .logo-mini {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(255, 232, 146, 0.95);
+    }
+
+    @media (max-width: 768px) {
+      .top {
+        flex: 3;
       }
-      body {
-        overflow: auto;
-      }
-      .app {
-        padding-bottom: 28px;
+      .bottom {
+        flex: 2;
       }
     }
 
-    @media (max-width: 600px) {
-      header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 6px;
+    @media (max-width: 520px) {
+      .bottom {
+        padding: 10px 12px 14px;
       }
-      .text-display {
-        font-size: 1.7rem;
+      .bottom-title {
+        font-size: 0.82rem;
+      }
+      .bottom-sub {
+        font-size: 0.78rem;
       }
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <header>
-      <div class="title">
-        <div class="title-logo"></div>
-        <div>
-          <h1><span>Hyper</span>Text Studio</h1>
-          <div class="subtitle">Modular 2D/3D text animation system</div>
+    <!-- 위쪽: 애니메이션 영역 -->
+    <div class="top">
+      <div class="stage">
+        <div class="hud">
+          <div class="hud-title">Nintendo-Style 3D Popup</div>
+          <div class="hud-chip">
+            <span class="hud-dot"></span>
+            GAME TEXT DEMO
+          </div>
+        </div>
+        <canvas id="threeCanvas"></canvas>
+      </div>
+    </div>
+
+    <!-- 아래쪽: 설명 / UI 영역 -->
+    <div class="bottom">
+      <div class="bottom-title">닌텐도 게임 스타일 3D 텍스트</div>
+      <div class="bottom-sub">
+        위쪽 영역에서 텍스트가 <b>“툭!” 튀어나왔다가</b> 잠깐 떠 있고,
+        다시 <b>팍</b> 사라지는 모션을 반복합니다.
+        <br />
+        두꺼운 엠보싱, 발광(emissive) 재질, 컬러 조명으로
+        콘솔 게임 타이틀 같은 느낌을 만들었습니다.
+      </div>
+
+      <div class="hint-row">
+        <div class="pill">
+          여러 문구가 <b>순서대로</b> 나타났다 사라집니다:
+          <br />
+          「SUPER START!」 · 「PRESS BUTTON」 · 「READY GO!」
+        </div>
+        <div class="pill">
+          속도·이징·스케일·알파 애니메이션 로직만 바꿔서
+          쉽게 자신만의 연출로 확장할 수 있습니다.
         </div>
       </div>
-      <div class="chip">HTML · CSS · JavaScript · Three.js</div>
-    </header>
 
-    <main>
-      <!-- LEFT: 2D text and 3D canvas -->
-      <section class="panel panel-left">
-        <div class="text2d-wrapper">
-          <div class="text2d-label">
-            2D Layer
-            <span class="tag-pill">CSS · DOM · Motion</span>
-          </div>
-          <div id="textDisplay" class="text-display glow" data-text="">
-            <!-- Populated by JS -->
-          </div>
-        </div>
-
-        <div class="canvas3d-wrapper">
-          <div class="canvas3d-header">
-            <span class="dot"></span> 3D Layer · Three.js
-          </div>
-          <canvas id="threeCanvas"></canvas>
-        </div>
-      </section>
-
-      <!-- RIGHT: Controls -->
-      <aside class="panel panel-right">
-        <div class="controls-header">
-          <h2>Control Surface</h2>
-        </div>
-
-        <div class="controls-section">
-          <div class="controls-section-title">Text &amp; Content</div>
-          <div class="field field-wide">
-            <label for="textInput">Text</label>
-            <textarea id="textInput" spellcheck="false">HyperText Studio · 2D + 3D · Live</textarea>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label for="fontSizeRange">2D size</label>
-              <input id="fontSizeRange" type="range" min="18" max="72" value="40" />
-            </div>
-            <div class="field">
-              <label for="speedRange">Speed</label>
-              <input id="speedRange" type="range" min="0.25" max="2.0" step="0.05" value="1" />
-            </div>
-          </div>
-          <p class="hint">Type anything and hit <code>Play</code> to re-run animations.</p>
-        </div>
-
-        <div class="controls-section">
-          <div class="controls-section-title">2D Animation</div>
-          <div class="field-row">
-            <div class="field">
-              <label for="animation2dSelect">Style</label>
-              <select id="animation2dSelect">
-                <option value="typing">Typing + Caret</option>
-                <option value="wave">Wave Letters</option>
-                <option value="glitch">Glitch Scan</option>
-                <option value="neon">Neon Pulse</option>
-                <option value="rainbow">Liquid Rainbow</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Color</label>
-              <div class="color-input">
-                <input id="color2d" type="color" value="#ffffff" />
-              </div>
-            </div>
-          </div>
-          <div class="buttons-row">
-            <button id="play2d" class="btn btn-primary">
-              <span class="btn-icon">▶</span> Play
-            </button>
-            <button id="shuffle2d" class="btn btn-ghost">
-              <span class="btn-icon">✦</span> Randomize
-            </button>
-          </div>
-        </div>
-
-        <div class="controls-section">
-          <div class="controls-section-title">3D Animation</div>
-          <div class="field-row">
-            <div class="field">
-              <label class="inline-toggle">
-                <input id="enable3d" type="checkbox" checked />
-                Enable 3D layer
-              </label>
-            </div>
-            <div class="field">
-              <label for="animation3dSelect">Orbit mode</label>
-              <select id="animation3dSelect">
-                <option value="float">Float &amp; Spin</option>
-                <option value="bounce">Bounce Pulse</option>
-                <option value="warp">Warped Wave</option>
-              </select>
-            </div>
-          </div>
-          <div class="field-row">
-            <div class="field">
-              <label>3D color</label>
-              <div class="color-input">
-                <input id="color3d" type="color" value="#00d2ff" />
-              </div>
-            </div>
-            <div class="field">
-              <label for="depthRange">Depth</label>
-              <input id="depthRange" type="range" min="0.05" max="0.45" step="0.02" value="0.16" />
-            </div>
-          </div>
-          <div class="buttons-row">
-            <button id="resetCamera" class="btn btn-ghost">
-              <span class="btn-icon">◎</span> Reset view
-            </button>
-          </div>
-          <p class="hint">
-            Drag to orbit · Scroll to zoom · 3D text is regenerated on changes.
-          </p>
-        </div>
-
-        <footer>
-          <span>Extend this by registering new 2D/3D animations in JavaScript.</span>
-        </footer>
-      </aside>
-    </main>
+      <div class="footer">
+        <span>코드를 수정해서 텍스트/색상/카메라를 자유롭게 바꿔 보세요.</span>
+        <span class="logo-mini">3D·TEXT</span>
+      </div>
+    </div>
   </div>
 
-  <!-- Three.js + extras from CDN -->
+  <!-- Three.js & helpers -->
   <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-  <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
   <script src="https://unpkg.com/three@0.160.0/examples/js/loaders/FontLoader.js"></script>
   <script src="https://unpkg.com/three@0.160.0/examples/js/geometries/TextGeometry.js"></script>
 
   <script>
-    // ------------------------------------------------------------
-    // Utility helpers
-    // ------------------------------------------------------------
+    // ============================
+    // 기본 유틸
+    // ============================
     function clamp(v, min, max) {
       return Math.min(max, Math.max(min, v));
     }
@@ -855,469 +256,273 @@
       return a + (b - a) * t;
     }
 
-    function pickRandom(arr) {
-      return arr[Math.floor(Math.random() * arr.length)];
+    // 부드러운 탄성 이징 (닌텐도 튀어나오는 맛)
+    function easeOutBack(x) {
+      const c1 = 1.70158;
+      const c3 = c1 + 1;
+      return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2);
     }
 
-    // ------------------------------------------------------------
-    // 2D ANIMATION SYSTEM (DOM + CSS + JS)
-    // ------------------------------------------------------------
+    // ============================
+    // Three.js 설정
+    // ============================
+    const canvas = document.getElementById("threeCanvas");
+    let renderer, scene, camera;
+    let font;
+    let textMesh, textGroup;
+    const clock = new THREE.Clock();
 
-    const textDisplay = document.getElementById("textDisplay");
+    // 애니메이션 사이클 설정
+    const phrases = [
+      "SUPER START!",
+      "PRESS BUTTON",
+      "READY GO!"
+    ];
 
-    const State2D = {
-      currentAnimation: null,
-      cancel: null
+    const timings = {
+      appear: 0.9,    // 등장
+      hold: 1.4,      // 유지
+      disappear: 0.9, // 퇴장
+      gap: 0.3        // 아무것도 없음
     };
+    const totalDuration = timings.appear + timings.hold + timings.disappear + timings.gap;
 
-    const Anim2D = {
-      typing({ text, speedFactor }) {
-        cancelCurrent2D();
-
-        const baseDelay = 45;
-        const delay = baseDelay / clamp(speedFactor, 0.25, 2.0);
-
-        textDisplay.className = "text-display";
-        textDisplay.dataset.text = text;
-        textDisplay.textContent = "";
-
-        let index = 0;
-        let cancelled = false;
-
-        function tick() {
-          if (cancelled) return;
-          if (index <= text.length) {
-            const visible = text.slice(0, index);
-            textDisplay.textContent = visible;
-            // caret
-            const caret = document.createElement("span");
-            caret.className = "caret";
-            textDisplay.appendChild(caret);
-            index++;
-            setTimeout(tick, delay);
-          } else {
-            // keep caret blinking at end
-            textDisplay.textContent = text;
-            const caret = document.createElement("span");
-            caret.className = "caret";
-            textDisplay.appendChild(caret);
-          }
-        }
-
-        tick();
-
-        State2D.currentAnimation = "typing";
-        State2D.cancel = () => {
-          cancelled = true;
-        };
-      },
-
-      wave({ text }) {
-        cancelCurrent2D();
-
-        textDisplay.className = "text-display";
-        textDisplay.dataset.text = text;
-        textDisplay.innerHTML = "";
-
-        const frag = document.createDocumentFragment();
-        for (let i = 0; i < text.length; i++) {
-          const ch = text[i];
-          const span = document.createElement("span");
-          span.className = "wave-letter";
-          span.style.setProperty("--i", i.toString());
-          span.textContent = ch;
-          frag.appendChild(span);
-        }
-        textDisplay.appendChild(frag);
-
-        State2D.currentAnimation = "wave";
-        State2D.cancel = null;
-      },
-
-      glitch({ text }) {
-        cancelCurrent2D();
-
-        textDisplay.className = "text-display glitch";
-        textDisplay.dataset.text = text;
-        textDisplay.textContent = text;
-
-        State2D.currentAnimation = "glitch";
-        State2D.cancel = null;
-      },
-
-      neon({ text }) {
-        cancelCurrent2D();
-
-        textDisplay.className = "text-display glow";
-        textDisplay.dataset.text = text;
-        textDisplay.textContent = text;
-
-        State2D.currentAnimation = "neon";
-        State2D.cancel = null;
-      },
-
-      rainbow({ text }) {
-        cancelCurrent2D();
-
-        textDisplay.className = "text-display rainbow";
-        textDisplay.dataset.text = text;
-        textDisplay.textContent = text;
-
-        State2D.currentAnimation = "rainbow";
-        State2D.cancel = null;
-      }
-    };
-
-    function cancelCurrent2D() {
-      if (State2D.cancel) {
-        try {
-          State2D.cancel();
-        } catch (e) {
-          console.warn("2D cancel error", e);
-        }
-      }
-      State2D.cancel = null;
-    }
-
-    function play2DFromControls() {
-      const text = document.getElementById("textInput").value || "";
-      const style = document.getElementById("animation2dSelect").value;
-      const speed = parseFloat(document.getElementById("speedRange").value || "1");
-      const fontSize = parseInt(document.getElementById("fontSizeRange").value || "40", 10);
-
-      textDisplay.style.fontSize = fontSize + "px";
-      const color2d = document.getElementById("color2d").value;
-      textDisplay.style.color = color2d;
-      textDisplay.style.setProperty("--glow-color", color2d);
-
-      const fn = Anim2D[style] || Anim2D.typing;
-      fn({ text, speedFactor: speed });
-    }
-
-    function randomize2D() {
-      const styles = ["typing", "wave", "glitch", "neon", "rainbow"];
-      const pick = pickRandom(styles);
-      document.getElementById("animation2dSelect").value = pick;
-      document.getElementById("speedRange").value = (0.4 + Math.random() * 1.6).toFixed(2);
-      document.getElementById("fontSizeRange").value = (24 + Math.random() * 40).toFixed(0);
-      // random 2D color (bright-ish)
-      const hue = Math.floor(Math.random() * 360);
-      document.getElementById("color2d").value = `hsl(${hue}, 95%, 75%)`.replace(
-        /hsl\(([^)]+)\)/,
-        (_, inner) => {
-          const [h, s, l] = inner.split(",").map((v) => parseFloat(v));
-          // convert to hex roughly
-          function hslToHex(h, s, l) {
-            s /= 100;
-            l /= 100;
-            const k = n => (n + h / 30) % 12;
-            const a = s * Math.min(l, 1 - l);
-            const f = n => {
-              const x = l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
-              return Math.round(255 * x)
-                .toString(16)
-                .padStart(2, "0");
-            };
-            return `#${f(0)}${f(8)}${f(4)}`;
-          }
-          return hslToHex(h, s, l);
-        }
-      );
-      play2DFromControls();
-    }
-
-    document.getElementById("play2d").addEventListener("click", () => {
-      play2DFromControls();
-    });
-    document.getElementById("shuffle2d").addEventListener("click", () => {
-      randomize2D();
-    });
-
-    document.getElementById("fontSizeRange").addEventListener("input", () => {
-      const fontSize = parseInt(document.getElementById("fontSizeRange").value || "40", 10);
-      textDisplay.style.fontSize = fontSize + "px";
-    });
-
-    document.getElementById("color2d").addEventListener("input", () => {
-      const value = document.getElementById("color2d").value;
-      textDisplay.style.color = value;
-      textDisplay.style.setProperty("--glow-color", value);
-    });
-
-    // ------------------------------------------------------------
-    // 3D ANIMATION SYSTEM (THREE.js)
-    // ------------------------------------------------------------
-
-    const canvas3D = document.getElementById("threeCanvas");
-    let renderer, scene, camera, controls, font;
-    let textMesh = null;
-    let clock = new THREE.Clock();
-    const threeState = {
-      ready: false,
-      animationMode: "float",
-      baseY: 0,
-      baseScale: 1,
-      targetColor: new THREE.Color(0x00d2ff)
-    };
+    let lastCycleIndex = -1;
+    let currentPhraseIndex = 0;
 
     function initThree() {
+      // 렌더러
       renderer = new THREE.WebGLRenderer({
-        canvas: canvas3D,
+        canvas,
         antialias: true,
         alpha: true
       });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      updateRendererSize();
+      resizeRenderer();
 
+      // 씬
       scene = new THREE.Scene();
-      scene.fog = new THREE.FogExp2(0x01020a, 0.36);
+      scene.fog = new THREE.FogExp2(0x050517, 0.18);
 
-      camera = new THREE.PerspectiveCamera(40, canvas3D.clientWidth / canvas3D.clientHeight, 0.1, 100);
-      camera.position.set(0, 1.1, 8);
+      // 카메라
+      camera = new THREE.PerspectiveCamera(
+        40,
+        canvas.clientWidth / canvas.clientHeight,
+        0.1,
+        100
+      );
+      camera.position.set(0, 1.2, 7);
+      scene.add(camera);
 
-      controls = new THREE.OrbitControls(camera, canvas3D);
-      controls.enableDamping = true;
-      controls.enablePan = false;
-      controls.minDistance = 3;
-      controls.maxDistance = 14;
-      controls.autoRotate = true;
-      controls.autoRotateSpeed = 0.6;
+      // 라이트 세팅 (게임 콘솔 느낌 컬러)
+      const hemi = new THREE.HemisphereLight(0xfff6d4, 0x05040a, 1.0);
+      scene.add(hemi);
 
-      const ambLight = new THREE.AmbientLight(0xffffff, 0.42);
-      scene.add(ambLight);
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.2);
+      keyLight.position.set(5, 8, 6);
+      keyLight.castShadow = false;
+      scene.add(keyLight);
 
-      const dir1 = new THREE.DirectionalLight(0xffffff, 1.4);
-      dir1.position.set(4, 8, 6);
-      scene.add(dir1);
+      const fillPink = new THREE.PointLight(0xff4c94, 1.2, 18);
+      fillPink.position.set(-4, 2, 3);
+      scene.add(fillPink);
 
-      const dir2 = new THREE.DirectionalLight(0xff6bcb, 0.8);
-      dir2.position.set(-6, -4, -4);
-      scene.add(dir2);
+      const fillBlue = new THREE.PointLight(0x48e0ff, 1.2, 22);
+      fillBlue.position.set(3, -1, -4);
+      scene.add(fillBlue);
 
-      const pointBlue = new THREE.PointLight(0x00d2ff, 2, 14);
-      pointBlue.position.set(3, 2, 4);
-      scene.add(pointBlue);
-
-      const pointMagenta = new THREE.PointLight(0xff6bcb, 1.6, 16);
-      pointMagenta.position.set(-3, -1, -4);
-      scene.add(pointMagenta);
-
-      // background "grid" of points
-      const particlesGeometry = new THREE.BufferGeometry();
-      const count = 500;
-      const positions = new Float32Array(count * 3);
-      for (let i = 0; i < count; i++) {
-        positions[i * 3 + 0] = (Math.random() - 0.5) * 18;
-        positions[i * 3 + 1] = (Math.random() - 0.5) * 10;
-        positions[i * 3 + 2] = -Math.random() * 18 - 1;
+      // 배경 파티클 (별 느낌)
+      const starGeo = new THREE.BufferGeometry();
+      const starCount = 450;
+      const positions = new Float32Array(starCount * 3);
+      for (let i = 0; i < starCount; i++) {
+        positions[i * 3 + 0] = (Math.random() - 0.5) * 16;
+        positions[i * 3 + 1] = Math.random() * 7 + 1;
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
       }
-      particlesGeometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-      const particlesMaterial = new THREE.PointsMaterial({
-        color: 0x5f6af6,
+      starGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+      const starMat = new THREE.PointsMaterial({
+        color: 0xffffff,
         size: 0.06,
         transparent: true,
-        opacity: 0.46,
+        opacity: 0.6,
         depthWrite: false
       });
-      const particles = new THREE.Points(particlesGeometry, particlesMaterial);
-      particles.name = "backgroundParticles";
-      scene.add(particles);
+      const stars = new THREE.Points(starGeo, starMat);
+      stars.name = "stars";
+      scene.add(stars);
 
-      // load font
+      // 바닥 같은 살짝 반사되는 판
+      const floorGeo = new THREE.CylinderGeometry(6, 7, 0.5, 32);
+      const floorMat = new THREE.MeshStandardMaterial({
+        color: 0x151534,
+        metalness: 0.9,
+        roughness: 0.4,
+        transparent: true,
+        opacity: 0.9,
+        emissive: new THREE.Color(0x20205a)
+      });
+      const floor = new THREE.Mesh(floorGeo, floorMat);
+      floor.position.set(0, -1.8, 0);
+      scene.add(floor);
+
+      // 텍스트 그룹
+      textGroup = new THREE.Group();
+      scene.add(textGroup);
+
+      // 폰트 로드
       const loader = new THREE.FontLoader();
       loader.load(
-        "https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_regular.typeface.json",
+        "https://unpkg.com/three@0.160.0/examples/fonts/helvetiker_bold.typeface.json",
         (loadedFont) => {
           font = loadedFont;
-          threeState.ready = true;
-          rebuild3DText();
+          rebuildTextMesh(phrases[currentPhraseIndex]);
         },
         undefined,
         (err) => {
-          console.error("Font load error", err);
+          console.error("폰트 로드 실패:", err);
         }
       );
 
-      window.addEventListener("resize", () => {
-        updateRendererSize();
-      });
-
-      animate3D();
+      window.addEventListener("resize", resizeRenderer);
+      animate();
     }
 
-    function updateRendererSize() {
+    function resizeRenderer() {
       if (!renderer) return;
-      const { clientWidth, clientHeight } = canvas3D;
-      renderer.setSize(clientWidth, clientHeight, false);
+      const width = canvas.clientWidth;
+      const height = canvas.clientHeight;
+      renderer.setSize(width, height, false);
       if (camera) {
-        camera.aspect = clientWidth / clientHeight;
+        camera.aspect = width / height;
         camera.updateProjectionMatrix();
       }
     }
 
-    function rebuild3DText() {
-      if (!threeState.ready || !font) return;
+    function rebuildTextMesh(text) {
+      if (!font) return;
+
       if (textMesh) {
-        scene.remove(textMesh);
+        textGroup.remove(textMesh);
         textMesh.geometry.dispose();
         textMesh.material.dispose();
         textMesh = null;
       }
 
-      const text = document.getElementById("textInput").value || "";
-
-      const depth = parseFloat(document.getElementById("depthRange").value || "0.16");
-      const bevelSize = depth * 0.35;
-      const bevelThickness = depth * 1.4;
-
-      const geometry = new THREE.TextGeometry(text || " ", {
+      const depth = 0.5;
+      const geo = new THREE.TextGeometry(text, {
         font,
-        size: 0.7,
+        size: 1.1,
         height: depth,
-        curveSegments: 10,
+        curveSegments: 14,
         bevelEnabled: true,
-        bevelThickness,
-        bevelSize,
+        bevelThickness: 0.22,
+        bevelSize: 0.18,
         bevelOffset: 0,
-        bevelSegments: 3
+        bevelSegments: 5
       });
 
-      geometry.computeBoundingBox();
-      geometry.center();
+      geo.computeBoundingBox();
+      geo.center();
 
-      const colorValue = document.getElementById("color3d").value;
-      threeState.targetColor.set(colorValue);
-
-      const material = new THREE.MeshStandardMaterial({
-        color: threeState.targetColor.clone(),
-        emissive: threeState.targetColor.clone().multiplyScalar(0.32),
-        metalness: 0.55,
-        roughness: 0.28
+      const baseColor = new THREE.Color(0xfff79b); // 노란 계열
+      const mat = new THREE.MeshStandardMaterial({
+        color: baseColor,
+        metalness: 0.75,
+        roughness: 0.25,
+        emissive: new THREE.Color(0xffb53f),
+        emissiveIntensity: 0.7,
+        transparent: true,
+        opacity: 0.0 // 처음에는 보이지 않게
       });
 
-      textMesh = new THREE.Mesh(geometry, material);
-      textMesh.castShadow = false;
-      textMesh.receiveShadow = false;
-
-      const group = new THREE.Group();
-      group.add(textMesh);
-      group.name = "textGroup";
-      scene.add(group);
-
-      threeState.baseY = 0;
-      threeState.baseScale = 1;
+      textMesh = new THREE.Mesh(geo, mat);
+      textMesh.position.y = -2.0;
+      textMesh.scale.set(0, 0, 0);
+      textGroup.add(textMesh);
     }
 
-    function update3DFromControls() {
-      threeState.animationMode = document.getElementById("animation3dSelect").value;
-      if (textMesh) {
-        const colorValue = document.getElementById("color3d").value;
-        threeState.targetColor.set(colorValue);
-        textMesh.material.color.copy(threeState.targetColor);
-        textMesh.material.emissive.copy(threeState.targetColor).multiplyScalar(0.32);
-      }
-      rebuild3DText();
-    }
-
-    function animate3D() {
-      requestAnimationFrame(animate3D);
+    // ============================
+    // 애니메이션 루프
+    // ============================
+    function animate() {
+      requestAnimationFrame(animate);
       if (!renderer || !scene || !camera) return;
 
-      const delta = clock.getDelta();
-      const t = clock.elapsedTime;
+      const elapsed = clock.getElapsedTime();
+      const cycleIndex = Math.floor(elapsed / totalDuration);
+      const tInCycle = elapsed % totalDuration;
 
-      if (controls) controls.update();
+      // 새로운 사이클에 들어가면 문구 변경
+      if (cycleIndex !== lastCycleIndex && font) {
+        lastCycleIndex = cycleIndex;
+        currentPhraseIndex = (currentPhraseIndex + 1) % phrases.length;
+        rebuildTextMesh(phrases[currentPhraseIndex]);
+      }
 
-      const enable3d = document.getElementById("enable3d").checked;
-      const group = scene.getObjectByName("textGroup");
-      if (group && textMesh) {
-        group.visible = enable3d;
-        const speedFactor = parseFloat(document.getElementById("speedRange").value || "1");
-        const s = speedFactor;
+      // 텍스트 애니메이션
+      if (textMesh) {
+        const m = textMesh;
+        let scale = 0;
+        let opacity = 0;
+        let posY = -2.0;
+        const baseScale = 1.15;
 
-        if (enable3d) {
-          switch (threeState.animationMode) {
-            case "float": {
-              group.rotation.y += 0.2 * delta * s;
-              group.rotation.x = lerp(group.rotation.x, Math.sin(t * 0.4 * s) * 0.25, 0.08);
-              group.position.y = Math.sin(t * 0.9 * s) * 0.35;
-              const baseScale = 1 + Math.sin(t * 0.12) * 0.03;
-              group.scale.set(baseScale, baseScale, baseScale);
-              break;
-            }
-            case "bounce": {
-              group.rotation.y += 0.14 * delta * s;
-              const bounce = Math.abs(Math.sin(t * 1.8 * s));
-              group.position.y = bounce * 0.7 - 0.3;
-              const scaleY = 0.9 + bounce * 0.3;
-              const scaleX = 1.2 - bounce * 0.2;
-              group.scale.set(scaleX, scaleY, scaleX);
-              break;
-            }
-            case "warp": {
-              group.rotation.y += 0.5 * delta * s;
-              group.rotation.x = Math.sin(t * 0.7 * s) * 0.6;
-              group.position.y = Math.sin(t * 1.2 * s) * 0.25;
-              const warp = 0.8 + (Math.sin(t * 2.1 * s) * 0.4 + 0.4);
-              group.scale.set(warp, 1.4 - (warp - 0.8), warp * 0.9);
-              break;
-            }
-            default:
-              break;
-          }
+        if (tInCycle < timings.appear) {
+          // 등장 구간
+          const p = clamp(tInCycle / timings.appear, 0, 1);
+          const e = easeOutBack(p);
+          scale = baseScale * e;
+          opacity = p;
+          posY = lerp(-2.0, 0.3, p);
+        } else if (tInCycle < timings.appear + timings.hold) {
+          // 유지 구간
+          const localT = tInCycle - timings.appear;
+          const p = clamp(localT / timings.hold, 0, 1);
+          const breathe = 0.04 * Math.sin(elapsed * 6.0);
+          scale = baseScale * (1 + breathe);
+          opacity = 1.0;
+          posY = 0.3 + Math.sin(elapsed * 4.0) * 0.05;
+        } else if (tInCycle < timings.appear + timings.hold + timings.disappear) {
+          // 사라지는 구간
+          const localT = tInCycle - timings.appear - timings.hold;
+          const p = clamp(localT / timings.disappear, 0, 1);
+          scale = baseScale * (1 + 0.7 * p);
+          opacity = 1.0 - p;
+          posY = 0.3 + p * 1.0;
+        } else {
+          // gap 구간 (안 보이게)
+          scale = 0;
+          opacity = 0;
+          posY = -2.0;
         }
+
+        m.scale.set(scale, scale, scale);
+        m.position.y = posY;
+        m.material.opacity = opacity;
+
+        // 살짝 회전감 (게임 연출 느낌)
+        m.rotation.y = Math.sin(elapsed * 1.4) * 0.22;
+        m.rotation.x = Math.cos(elapsed * 0.9) * 0.1;
       }
 
-      const particles = scene.getObjectByName("backgroundParticles");
-      if (particles) {
-        particles.rotation.z += 0.02 * delta;
-        particles.position.z = -12 - Math.sin(t * 0.3) * 1.5;
+      // 배경 별 움직임
+      const stars = scene.getObjectByName("stars");
+      if (stars) {
+        stars.rotation.y += 0.01;
+        stars.position.y = 0.5 + Math.sin(elapsed * 0.35) * 0.6;
       }
+
+      // 카메라 약간 흔들림
+      camera.position.x = Math.sin(elapsed * 0.4) * 0.4;
+      camera.position.y = 1.2 + Math.cos(elapsed * 0.7) * 0.15;
+      camera.lookAt(0, 0, 0);
 
       renderer.render(scene, camera);
     }
 
-    // Controls wiring for 3D
-    document.getElementById("animation3dSelect").addEventListener("change", update3DFromControls);
-    document.getElementById("color3d").addEventListener("input", update3DFromControls);
-    document.getElementById("depthRange").addEventListener("input", rebuild3DText);
-    document.getElementById("enable3d").addEventListener("change", () => {
-      // no-op, visibility handled in render loop
-    });
-
-    document.getElementById("resetCamera").addEventListener("click", () => {
-      if (!camera || !controls) return;
-      camera.position.set(0, 1.1, 8);
-      controls.target.set(0, 0, 0);
-      controls.autoRotate = true;
-      controls.update();
-    });
-
-    // rebuild both layers when text changes
-    let textInputDebounce = null;
-    document.getElementById("textInput").addEventListener("input", () => {
-      if (textInputDebounce) {
-        clearTimeout(textInputDebounce);
-      }
-      textInputDebounce = setTimeout(() => {
-        play2DFromControls();
-        rebuild3DText();
-      }, 220);
-    });
-
-    // speed change influences both layers
-    document.getElementById("speedRange").addEventListener("input", () => {
-      // re-run 2D animation
-      play2DFromControls();
-    });
-
-    // ------------------------------------------------------------
-    // Initialize everything
-    // ------------------------------------------------------------
+    // 초기화
     window.addEventListener("load", () => {
-      // initial 2D
-      play2DFromControls();
-      // initialize Three.js
       initThree();
     });
   </script>
